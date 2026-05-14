@@ -1,0 +1,3 @@
+*.pdf
+out.typ
+__pycache__/
