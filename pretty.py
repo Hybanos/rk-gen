@@ -86,26 +86,27 @@ $ {sys} $ with $ {var} $
 """)
 
 def write_tableaux():
-    out = ""
+    out = f"Found {len(out_conf["tableaux"])} butcher tableaux"
     for symbols, mat, s in out_conf["tableaux"]:
-        out += f"""#table(
+        var_to_val = dict(zip(map(str, symbols), mat))
+        out += f"""#butcher-tableau(
     columns: {s + 1},
-    inset: 10pt,
-    align: horizon,
 """
-        out += " [0]," + s * "[], "
+        out += "[0]," + s * "[], "
         for i in range(1, s):
-            out += f"[b_{i+1}], "
+            out += "\n"
+            out += f"[{var_to_val.get(f"c_{i+1}", 0):.3f}], "
             for j in range(s):
                 if i > j:
-                    out += f"[a_{i+1}{j+1}], "
+                    out += f"[{var_to_val.get(f"a_{i+1}{j+1}", 0):.3f}], "
                 else:
                     out += "[], "
         
+        out += "\ntable.hline(stroke: black), \n"
         out += "[], "
         for j in range(s):
-            out += f"[c_{j+1}], "
-        out += ")"
+            out += f"[{var_to_val.get(f"b_{j+1}", 0):.3f}], "
+        out += ")\n"
     out_conf["file"].write(f"""== Tableaux <tableaux>
 {out}
 """)

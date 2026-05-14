@@ -14,3 +14,9 @@
         - haha
             - haha
 ]
+
+#let butcher-tableau = table.with(
+    stroke: (x, y) => if x == 0 {(right: 1pt + black)},
+    inset: 10pt,
+    align: center
+)
