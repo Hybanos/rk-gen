@@ -1,9 +1,12 @@
 from sympy import Symbol, nsolve, sympify, solve_undetermined_coeffs
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.colors as colors 
 
 import pretty
 from treegen import Node, gen
 from phi_t import Factor, Factors, label_tree, generate_factors
+from test_method import abstract_rk
 
 def generate_system(s):
     equations = []
@@ -25,30 +28,7 @@ def solve(symbols, equations, s):
     print(*equations, sep="\n")
     print(*symbols, sep="\n")
 
-    # equations.append(sympify("a_21 - c_2"))
-    # # equations.append(sympify("a_31 + a_32 - c_3"))
-    # symbols.append("a_21")
-    # # symbols.append("a_31")
-
-    # pretty.add_system(symbols, equations)
-
-    # equations.append(None)
-    # # equations.append(None)
-
-    # for i in range(0, 10 + 1):
-    #     # for j in range(-10, 10):
-    #         equations[-1] = sympify(f"c_{2} - {i / 10}")
-    #         # equations[-1] = sympify(f"c_{3} - {j / 10}")
-
-    #         try:
-    #             res = nsolve(equations, symbols, [k+1 for k in range(len(symbols))])
-    #             pretty.add_tableau(symbols, res, s)
-    #         except Exception as e:
-    #             print(i, i, e)
-
     missing = len(symbols) - len(equations)
-    vals = [0 for _ in range(missing)]
-
     pretty.add_system(symbols, equations)
 
     for i in range(missing):
@@ -59,32 +39,47 @@ def solve(symbols, equations, s):
             if f"a_{i+2}{j+1}" not in map(str, symbols):
                 symbols.append(f"a_{i+2}{j+1}")
         equations.append(" + ".join(eq) + f" - c_{i+2}")
-
     for i in range(missing):
         equations.append(None)
 
-    l = 20
+    l = 30
+    lbound = -1
+    ubound = 1
+    vals = [lbound for _ in range(missing)]
+    sols = np.zeros(l**missing)
     for i in range(l**missing):
         for j in range(missing):
-            if (i % l**j) == 0:
-                vals[j] += 1 / l
+            if (i % l**j) == 0 and i != 0:
+                vals[j] += (ubound - lbound) / l
                 for k in range(j):
-                    vals[k] = 0
-        
-        # print(*map(lambda x: round(x, 2), vals))
-        
+                    vals[k] = lbound 
         for j in range(missing):
             equations[-1 - j] = sympify(f"c_{j+2} - {vals[j]}")
         
-        # print(equations, symbols, sep="\n")
+        print(*map(lambda x: round(x, 3), vals))
         try:
             res = nsolve(equations, symbols, [k+1 for k in range(len(symbols))])
             pretty.add_tableau(symbols, res, s)
+            err = abstract_rk(symbols, res, s)
+            sols[i] = abs(err)
         except Exception as e:
-            print(*vals, e)
+            print(e)
+            sols[i] = float("nan")
+
+        
+    if missing == 1:
+        plt.plot(np.arange(lbound, ubound, (ubound - lbound)/l), sols)
+        plt.xlabel("c_2")
+        plt.ylabel("| relative error |")
+    
+    elif missing == 2:
+        plt.imshow(sols.reshape([l for _ in vals])[::-1,:], extent=[lbound, ubound, lbound, ubound], norm=colors.LogNorm())
+        plt.xlabel("c_2")
+        plt.ylabel("c_3")
 
 if __name__ == "__main__":
     s = 3
     symbols, equations = generate_system(s)
     solve(symbols, equations, s)
     pretty.render()
+    plt.show()
