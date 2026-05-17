@@ -87,10 +87,15 @@ $ {sys} $ with $ {var} $
 
 def write_tableaux():
     out = f"Found {len(out_conf["tableaux"])} butcher tableaux"
-    for symbols, mat, s in out_conf["tableaux"]:
+    for symbols, mat, s, err in out_conf["tableaux"]:
         var_to_val = dict(zip(map(str, symbols), mat))
-        out += f"""#butcher-tableau(
-    columns: {s + 1},
+        out += f"""
+#grid(
+    align: center + horizon,
+    columns: 2,
+
+    butcher-tableau(
+        columns: {s + 1},
 """
         out += "[0]," + s * "[], "
         for i in range(1, s):
@@ -106,7 +111,7 @@ def write_tableaux():
         out += "[], "
         for j in range(s):
             out += f"[{var_to_val.get(f"b_{j+1}", 0):.3f}], "
-        out += ")\n"
+        out += f'),\n"Error: {err:.3e}")\n'
     out_conf["file"].write(f"""== Tableaux <tableaux>
 {out}
 """)
@@ -120,8 +125,8 @@ def add_system(s, e):
     out_conf["symbols"] = s
     out_conf["equations"] = e
 
-def add_tableau(symbols, mat, s):
-    out_conf["tableaux"].append((symbols, mat, s))
+def add_tableau(symbols, mat, s, err):
+    out_conf["tableaux"].append((symbols, mat, s, err))
 
 if __name__ == "__main__":
     for i in range(1, 5):

@@ -1,10 +1,10 @@
 import numpy as np
 
-def f(x, y):
-    return -2 * y * y + x * (2 * x + 3) * y - x
+# def f(x, y):
+#     return -2 * y * y + x * (2 * x + 3) * y - x
 
-def exact(x):
-    return 1 / (2 * x + 3)
+# def exact(x):
+#     return 1 / (2 * x + 3)
 
 # def f(x, y):
 #     return np.tan(x) / np.cos(y)
@@ -12,11 +12,11 @@ def exact(x):
 # def exact(x):
 #     return np.asin(-np.log(np.abs(np.cos(x))))
 
-# def f(x, y):
-#     return -(3 * x * x + 1) * y 
+def f(x, y):
+    return -(3 * x * x + 1) * y 
 
-# def exact(x):
-#     return 5 * np.exp(-x**3 - x)
+def exact(x):
+    return 5 * np.exp(-x**3 - x)
 
 def abstract_rk(symbols, coefs, s):
 
@@ -40,7 +40,7 @@ def abstract_rk(symbols, coefs, s):
     Y = exact(t)
     dt = 0.0001
 
-    while t < 3:
+    while t < 1:
         stages = np.zeros(s)
 
         stages[0] = f(t + C[0] * dt, Y)

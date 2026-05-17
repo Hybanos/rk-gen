@@ -29,6 +29,7 @@ def solve(symbols, equations, s):
     print(*symbols, sep="\n")
 
     missing = len(symbols) - len(equations)
+    missing = max(missing, 0)
     pretty.add_system(symbols, equations)
 
     for i in range(missing):
@@ -42,9 +43,9 @@ def solve(symbols, equations, s):
     for i in range(missing):
         equations.append(None)
 
-    l = 4
-    lbound = -2.0
-    ubound = 2.0
+    l = 20
+    lbound = -0.0
+    ubound = 1.0
     vals = [lbound for _ in range(missing)]
     sols = np.zeros(l**missing)
     for i in range(l**missing):
@@ -58,9 +59,9 @@ def solve(symbols, equations, s):
         
         print(*map(lambda x: round(x, 3), vals))
         try:
-            res = nsolve(equations, symbols, [k+1 for k in range(len(symbols))], maxsteps=10, tol=1e-10)
-            pretty.add_tableau(symbols, res, s)
+            res = nsolve(equations, symbols, [k+2 for k in range(len(symbols))], maxsteps=10, tol=1e-1, prec=30)
             err = abstract_rk(symbols, res, s)
+            pretty.add_tableau(symbols, res, s, err)
             sols[i] = abs(err)
         except Exception as e:
             print(e)
@@ -77,7 +78,7 @@ def solve(symbols, equations, s):
         plt.ylabel("c_3")
 
 if __name__ == "__main__":
-    s = 3
+    s = 4
     symbols, equations = generate_system(s)
     solve(symbols, equations, s)
     pretty.render()
