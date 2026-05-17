@@ -38,9 +38,9 @@ def abstract_rk(symbols, coefs, s):
 
     t = 0
     Y = exact(t)
-    dt = 0.02
+    dt = 0.0001
 
-    while t < 1:
+    while t < 3:
         stages = np.zeros(s)
 
         stages[0] = f(t + C[0] * dt, Y)

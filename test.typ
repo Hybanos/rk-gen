@@ -20,3 +20,61 @@
     inset: 10pt,
     align: center
 )
+
+#set text(14pt)
+
+#grid(
+  columns: 8,
+  align: center + bottom,
+  gutter: 60pt,
+
+
+rk-tree[
+- haha #node-attr(rotate: 180deg)
+],
+
+rk-tree[
+- haha #node-attr(rotate: 180deg)
+  - haha
+],
+
+rk-tree[
+- haha #node-attr(rotate: 180deg)
+  - haha
+  - haha
+],
+
+rk-tree[
+- haha #node-attr(rotate: 180deg)
+  - haha
+    - haha
+],
+
+rk-tree[
+- haha #node-attr(rotate: 180deg)
+  - haha
+  - haha
+  - haha
+],
+
+rk-tree[
+- haha #node-attr(rotate: 180deg)
+  - haha
+  - haha
+    - haha
+],
+
+rk-tree[
+- haha #node-attr(rotate: 180deg)
+  - haha
+    - haha
+    - haha
+],
+
+rk-tree[
+- haha #node-attr(rotate: 180deg)
+  - haha
+    - haha
+      - haha
+]
+)

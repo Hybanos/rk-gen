@@ -42,9 +42,9 @@ def solve(symbols, equations, s):
     for i in range(missing):
         equations.append(None)
 
-    l = 30
-    lbound = -1
-    ubound = 1
+    l = 4
+    lbound = -2.0
+    ubound = 2.0
     vals = [lbound for _ in range(missing)]
     sols = np.zeros(l**missing)
     for i in range(l**missing):
@@ -58,7 +58,7 @@ def solve(symbols, equations, s):
         
         print(*map(lambda x: round(x, 3), vals))
         try:
-            res = nsolve(equations, symbols, [k+1 for k in range(len(symbols))])
+            res = nsolve(equations, symbols, [k+1 for k in range(len(symbols))], maxsteps=10, tol=1e-10)
             pretty.add_tableau(symbols, res, s)
             err = abstract_rk(symbols, res, s)
             sols[i] = abs(err)
@@ -66,7 +66,6 @@ def solve(symbols, equations, s):
             print(e)
             sols[i] = float("nan")
 
-        
     if missing == 1:
         plt.plot(np.arange(lbound, ubound, (ubound - lbound)/l), sols)
         plt.xlabel("c_2")
