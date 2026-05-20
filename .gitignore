@@ -1,4 +1,5 @@
 *.pdf
 *.svg
+*.json
 out.typ
 __pycache__/

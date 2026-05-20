@@ -8,7 +8,7 @@ ODEs = [
     ),
     (
         lambda x, y: np.tan(x) / np.cos(y),
-        lambda x: np.asin(-np.log(np.abs(np.cos(x))))
+        lambda x: np.arcsin(-np.log(np.abs(np.cos(x))))
     ),
     (
         lambda x, y: -(3 * x * x + 1) * y,

@@ -67,7 +67,7 @@ def gen_tableaux(symbols, equations, s, config):
             if tableau is not None:
                 break
             try:
-                res = nsolve(equations, symbols, [k+1 for k in range(len(symbols))], maxsteps=100, tol=1e-30)
+                res = nsolve(equations, symbols, [k+1 for k in range(len(symbols))], maxsteps=10, tol=1e-14)
                 tableau = Tableau(symbols, res, s)
                 cache.cache(tableau)
             except Exception as e:
@@ -106,15 +106,14 @@ def compare(tableaux, config):
         plt.clf()
 
 def drift(tableaux, config):
-    config.startt = 0
-    config.endt = 0.1
+    config.dt = 0.004
+    config.startt = 0.33
+    config.endt = config.startt + config.dt
 
     n = 5
     fig, axs = plt.subplots(3, n)
 
     for j in range(n):
-        config.startt += 0.2
-        config.endt += 0.2
 
         s = 0
         sols = np.zeros((3, len(tableaux)))
@@ -135,20 +134,24 @@ def drift(tableaux, config):
         
             elif s >= 3:
                 axs[i, j].imshow(x.reshape((config.l, config.l))[::-1,:], extent=[config.lbound, config.ubound, config.lbound, config.ubound], norm=colors.LogNorm())
+                if i == 0:
+                    axs[i, j].set_title(f"{round(config.startt, 3)}")
                 # axs[i, j].set_xlabel("c_2")
                 # axs[i, j].set_ylabel("c_3")
                 # axs[j, i].colorbar()
+        config.startt += config.dt 
+        config.endt += config.dt 
 
     # plt.tight_layout()
     # plt.colorbar()
     plt.show()
 
 if __name__ == "__main__":
-    s = 4
+    s = 3
     symbols, equations = generate_system(s)
     pretty.add_system(symbols, equations)
 
-    config = Config(20, -2.0, 2.0)
+    config = Config(100, -1.0, 1.0)
     tableaux = gen_tableaux(symbols, equations, s, config)
     for t in tableaux:
         pretty.add_tableau(t)
