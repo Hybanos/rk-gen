@@ -102,7 +102,12 @@ def write_tableaux():
     for tableau in out_conf["tableaux"]:
         if tableau is None:
             continue
-        out += f"""#butcher-tableau(
+        out += f"""
+#grid(
+    align: center + horizon,
+    columns: 2,
+
+    butcher-tableau(
     columns: {tableau.s + 1},
 """
         out += "[0]," + tableau.s * "[], "
@@ -119,7 +124,7 @@ def write_tableaux():
         out += "[], "
         for j in range(tableau.s):
             out += f"[{tableau.dict.get(f"b_{j+1}", 0):.3f}], "
-        out += ")\n"
+        out += f'),\n"Error: {0:.3e}")\n'
     out_conf["file"].write(f"""== Tableaux <tableaux>
 {out}
 """)

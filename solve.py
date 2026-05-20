@@ -144,7 +144,7 @@ def drift(tableaux, config):
     plt.show()
 
 if __name__ == "__main__":
-    s = 3
+    s = 4
     symbols, equations = generate_system(s)
     pretty.add_system(symbols, equations)
 
