@@ -78,3 +78,82 @@ rk-tree[
       - haha
 ]
 )
+
+#grid(
+  columns: 8,
+  align: center + bottom,
+  gutter: 60pt,
+
+rk-tree[
+- haha #node-attr(rotate: 180deg)
+],
+
+rk-tree[
+- haha #node-attr(rotate: 180deg)
+  - haha
+],
+
+rk-tree[
+- haha #node-attr(rotate: 180deg)
+  - haha
+  - haha
+],
+
+rk-tree[
+- haha #node-attr(rotate: 180deg)
+  - haha
+    - haha
+],
+
+rk-tree[
+- haha #node-attr(rotate: 180deg)
+  - haha
+  - haha
+  - haha
+],
+
+rk-tree[
+- haha #node-attr(rotate: 180deg)
+  - haha
+  - haha
+    - haha
+],
+
+rk-tree[
+- haha #node-attr(rotate: 180deg)
+  - haha
+    - haha
+    - haha
+],
+
+rk-tree[
+- haha #node-attr(rotate: 180deg)
+  - haha
+    - haha
+      - haha
+]
+)
+#pagebreak()
+
+#set align(center)
+#grid(
+  columns: 2,
+  gutter: 6pt,
+  align: center + horizon,
+$t = "[..[..]]" =$,
+$
+#rk-tree[
+- haha #node-attr(rotate: 180deg)
+  - haha
+    - haha
+    - haha
+  - haha
+  - haha
+]
+$
+)
+
+$ Phi(t) &= sum_(i j) b_i c_i^2 a_(i j) c_j^2 \
+ t! &= 18 $
+
+$ "[..[..]]"! = 1 times 1 times 3 times 1 times 1 times 6 = 18$

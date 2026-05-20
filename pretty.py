@@ -6,7 +6,8 @@ out_conf = {
     "trees": {},
     "symbols": [],
     "equations":[],
-    "tableaux": []
+    "tableaux": [],
+    "pics": []
 }
 
 def render():
@@ -20,6 +21,8 @@ def render():
     f.write("#pagebreak()\n")
     write_equations()
     f.write("#pagebreak()\n")
+    write_pics()
+    f.write("#pagebreak()\n")
     write_tableaux()
     f.close()
 
@@ -28,6 +31,7 @@ def write_contents():
 == Contents <contents>
 #link(<trees>)[Trees]\n
 #link(<equations>)[Equations]\n
+#link(<errors>)[Errors]\n
 #link(<tableaux>)[Tableaux]\n
 #pagebreak()
 """
@@ -85,27 +89,36 @@ $ {sys} $ with $ {var} $
 {len(out_conf["equations"])} equations for {len(out_conf["symbols"])} variables.
 """)
 
+def write_pics():
+    out = "== Errors <errors>"
+    for pic in out_conf["pics"]:
+        out += f"""
+#image("{pic}")
+"""
+    out_conf["file"].write(out)
+
 def write_tableaux():
     out = f"Found {len(out_conf["tableaux"])} butcher tableaux"
-    for symbols, mat, s in out_conf["tableaux"]:
-        var_to_val = dict(zip(map(str, symbols), mat))
+    for tableau in out_conf["tableaux"]:
+        if tableau is None:
+            continue
         out += f"""#butcher-tableau(
-    columns: {s + 1},
+    columns: {tableau.s + 1},
 """
-        out += "[0]," + s * "[], "
-        for i in range(1, s):
+        out += "[0]," + tableau.s * "[], "
+        for i in range(1, tableau.s):
             out += "\n"
-            out += f"[{var_to_val.get(f"c_{i+1}", 0):.3f}], "
-            for j in range(s):
+            out += f"[{tableau.dict.get(f"c_{i+1}", 0):.3f}], "
+            for j in range(tableau.s):
                 if i > j:
-                    out += f"[{var_to_val.get(f"a_{i+1}{j+1}", 0):.3f}], "
+                    out += f"[{tableau.dict.get(f"a_{i+1}{j+1}", 0):.3f}], "
                 else:
                     out += "[], "
         
         out += "\ntable.hline(stroke: black), \n"
         out += "[], "
-        for j in range(s):
-            out += f"[{var_to_val.get(f"b_{j+1}", 0):.3f}], "
+        for j in range(tableau.s):
+            out += f"[{tableau.dict.get(f"b_{j+1}", 0):.3f}], "
         out += ")\n"
     out_conf["file"].write(f"""== Tableaux <tableaux>
 {out}
@@ -120,8 +133,11 @@ def add_system(s, e):
     out_conf["symbols"] = s
     out_conf["equations"] = e
 
-def add_tableau(symbols, mat, s):
-    out_conf["tableaux"].append((symbols, mat, s))
+def add_tableau(tableau):
+    out_conf["tableaux"].append(tableau)
+
+def add_pic(pic):
+    out_conf["pics"].append(pic)
 
 if __name__ == "__main__":
     for i in range(1, 5):

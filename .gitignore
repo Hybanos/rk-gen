@@ -1,3 +1,4 @@
 *.pdf
+*.svg
 out.typ
 __pycache__/
