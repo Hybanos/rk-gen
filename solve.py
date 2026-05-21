@@ -67,7 +67,7 @@ def gen_tableaux(symbols, equations, s, config):
             if tableau is not None:
                 break
             try:
-                res = nsolve(equations, symbols, [k+1 for k in range(len(symbols))], maxsteps=10, tol=1e-14)
+                res = nsolve(equations, symbols, [k+1 for k in range(len(symbols))], maxsteps=10, tol=1e-30)
                 tableau = Tableau(symbols, res, s)
                 cache.cache(tableau)
             except Exception as e:
@@ -106,9 +106,12 @@ def compare(tableaux, config):
         plt.clf()
 
 def drift(tableaux, config):
-    config.dt = 0.004
-    config.startt = 0.33
-    config.endt = config.startt + config.dt
+    # config.dt = 0.004
+    # config.startt = 0.33
+    step = 0.1
+    config.dt = 0.001
+    config.startt = 0
+    config.endt = config.startt + step 
 
     n = 5
     fig, axs = plt.subplots(3, n)
@@ -139,8 +142,8 @@ def drift(tableaux, config):
                 # axs[i, j].set_xlabel("c_2")
                 # axs[i, j].set_ylabel("c_3")
                 # axs[j, i].colorbar()
-        config.startt += config.dt 
-        config.endt += config.dt 
+        config.startt += step 
+        config.endt +=  step
 
     # plt.tight_layout()
     # plt.colorbar()
@@ -151,11 +154,11 @@ if __name__ == "__main__":
     symbols, equations = generate_system(s)
     pretty.add_system(symbols, equations)
 
-    config = Config(100, -1.0, 1.0)
+    config = Config(100, -2.0, 2.0)
     tableaux = gen_tableaux(symbols, equations, s, config)
     for t in tableaux:
         pretty.add_tableau(t)
     # compare(tableaux, config)
-    pretty.render()
+    # pretty.render()
     drift(tableaux, config)
     cache.save()
