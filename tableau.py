@@ -40,7 +40,7 @@ class TCache:
     
     def save(self):
         with open("cache.json", "w") as f:
-            json.dump(self._cache, f, indent=4)
+            json.dump(self._cache, f)
     
     def get(self, vals):
         key = "_".join(map(lambda x: str(round(x, 5)), vals))
