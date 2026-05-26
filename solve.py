@@ -42,16 +42,18 @@ def test2(symbols, equations, s, config):
     step = (config.ubound - config.lbound) / config.l
 
     # add obious condition: c_i = \sum_j a_ij
-    for i in range(missing):
+    for i in range(s-1):
         eq = []
         for j in range(i+1):
             # equations.append(sympify(f"a_{i+2}{j+1} - c_{i+2}"))
             eq.append(f"a_{i+2}{j+1}")
-            if f"a_{i+2}{j+1}" not in map(str, symbols):
-                symbols.append(sympify(f"a_{i+2}{j+1}"))
+            sym = f"a_{i+2}{j+1}"
+            if sym not in map(str, symbols):
+                symbols.append(sympify(sym))
         equations.append(sympify(" + ".join(eq) + f" - c_{i+2}"))
     
     symbols.sort(key=lambda x: str(x))
+    print(symbols)
 
     # remove c_i from variables
     solve_for = []
@@ -60,6 +62,8 @@ def test2(symbols, equations, s, config):
             solve_for.append(sym)
 
     # solve system
+    print(*equations, sep="\n")
+    print(*solve_for, sep="\n")
     res = solve(equations, solve_for)
     res = res[0]
     print(*zip(solve_for, res), sep="\n")
@@ -79,8 +83,8 @@ def test2(symbols, equations, s, config):
                     vals_ind[k] = 0
         
         # print(*map(lambda x: round(x, 3), vals), end=" ")
-        # if not i % 100:
-        # print(*vals_ind, *map(lambda x: round(x, 3), vals))
+        if not i % 100:
+            print(*vals_ind, *map(lambda x: round(x, 3), vals))
 
         values = []
         # substitute c_i in solved system 
@@ -189,7 +193,7 @@ def drift(tableaux, config):
     # config.startt = 0.33
     step = 0.1
     config.dt = 0.01
-    config.startt = -0.2
+    config.startt = -0.0
     config.endt = config.startt + step 
 
     n = 5
@@ -241,7 +245,7 @@ def test(config):
                 b_1 = (2 - 3 * c_2 - 3 * c_3 + 6 * c_2 * c_3) / (6 * c_2 * c_3)
                 b_2 = (-2 + 3 * c_3) / (6 * c_2 * (-c_2 + c_3))
                 b_3 = (-2 + 3 * c_2) / (6 * c_3 * (c_2 - c_3))
-                a_32 = ((c_2 - c_3) * c_3) / c_2 * (-2 + 3 * c_2)
+                a_32 = ((c_2 - c_3) * c_3) / (c_2 * (-2 + 3 * c_2))
 
                 a_21 = c_2
                 a_31 = c_3 - a_32
@@ -262,15 +266,12 @@ if __name__ == "__main__":
     symbols, equations = generate_system(s)
     pretty.add_system(symbols, equations)
 
-    config = Config(10, -2.0, 2.0)
+    config = Config(40, -2.0, 2.0)
     # tableaux = gen_tableaux(symbols, equations, s, config)
     tableaux = test2(symbols, equations, s, config)
     # tableaux = test(config)
     for t in tableaux:
         pretty.add_tableau(t)
-        if t is not None:
-            t.print()
-            print("")
     # compare(tableaux, config)
     pretty.render()
     drift(tableaux, config)
