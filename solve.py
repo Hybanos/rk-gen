@@ -6,18 +6,8 @@ import matplotlib.colors as colors
 import pretty
 from treegen import Node, gen
 from phi_t import Factor, Factors, label_tree, generate_factors
-from test_method import testall 
+from test_method import testall, Config, ODEs
 from tableau import Tableau, cache
-
-class Config:
-    def __init__(self, l, lbound, ubound):
-        self.l = l
-        self.lbound = lbound
-        self.ubound = ubound
-
-        self.startt = 0
-        self.endt = 1
-        self.dt = 0.001
 
 def generate_system(s):
     equations = []
@@ -37,7 +27,7 @@ def generate_system(s):
     return symbols, equations
 
 
-def test2(symbols, equations, s, config):
+def gen_tableaux(symbols, equations, s, config):
     missing = len(symbols) - len(equations)
     step = (config.ubound - config.lbound) / config.l
 
@@ -65,8 +55,11 @@ def test2(symbols, equations, s, config):
     print(*equations, sep="\n")
     print(*solve_for, sep="\n")
     res = solve(equations, solve_for)
-    res = res[0]
-    print(*zip(solve_for, res), sep="\n")
+    if s == 2:
+        res = list(res.values())
+    if s == 3:
+        res = res[0]
+    print(*zip(solve_for, res), sep="\n", end="\n\n")
 
     # compute c_i values
     vals = [config.lbound for _ in range(missing)]
@@ -88,6 +81,7 @@ def test2(symbols, equations, s, config):
 
         values = []
         # substitute c_i in solved system 
+        # print(res)
         for j, _ in enumerate(res):
             e = res[j]
             for k in range(missing):
@@ -116,52 +110,12 @@ def test2(symbols, equations, s, config):
 
     return tableaux
 
-
-def gen_tableaux(symbols, equations, s, config):
-    missing = len(symbols) - len(equations)
-
-    for i in range(missing):
-        eq = []
-        for j in range(i+1):
-            # equations.append(sympify(f"a_{i+2}{j+1} - c_{i+2}"))
-            eq.append(f"a_{i+2}{j+1}")
-            if f"a_{i+2}{j+1}" not in map(str, symbols):
-                symbols.append(f"a_{i+2}{j+1}")
-        equations.append(" + ".join(eq) + f" - c_{i+2}")
-    for i in range(missing):
-        equations.append(None)
-
-    vals = [config.lbound for _ in range(missing)]
-    # sols = np.zeros((3, l**missing))
-    tableaux = []
-    for i in range(config.l**missing):
-        for j in range(missing):
-            if (i % config.l**j) == 0 and i != 0:
-                vals[j] += (config.ubound - config.lbound) / config.l
-                for k in range(j):
-                    vals[k] = config.lbound 
-        for j in range(missing):
-            equations[-1 - j] = sympify(f"c_{j+2} - {vals[j]}")
-        
-        print(*map(lambda x: round(x, 3), vals), end=" ")
-        tableau = cache.get(vals)
-        # what the fuck is sympy doing here hello ?
-        for k in range(1):
-            if tableau is not None:
-                break
-            try:
-                res = nsolve(equations, symbols, [k+1 for k in range(len(symbols))], maxsteps=10, tol=1e-30)
-                tableau = Tableau(symbols, res, s)
-                cache.cache(tableau)
-            except Exception as e:
-                print(e)
-        tableaux.append(tableau)
-
-    return tableaux
-
 def compare(tableaux, config):
+    config.dt = 0.01
+    config.startt = 0.0
+    config.endt = 10.0
     s = 0
-    sols = np.zeros((3, len(tableaux)))
+    sols = np.zeros((len(ODEs), len(tableaux)))
     for i, t in enumerate(tableaux):
         if t is not None:
             s = t.s
@@ -185,24 +139,25 @@ def compare(tableaux, config):
 
         plt.tight_layout()
         plt.savefig(f"errs_{i}.svg")
+        plt.show()
         pretty.add_pic(f"errs_{i}.svg")
         plt.clf()
 
 def drift(tableaux, config):
     # config.dt = 0.004
     # config.startt = 0.33
-    step = 0.1
+    step = 0.2
     config.dt = 0.01
     config.startt = -0.0
     config.endt = config.startt + step 
 
     n = 5
-    fig, axs = plt.subplots(3, n)
+    fig, axs = plt.subplots(len(ODEs), n)
 
     for j in range(n):
 
         s = 0
-        sols = np.zeros((3, len(tableaux)))
+        sols = np.zeros((len(ODEs), len(tableaux)))
         for i, t in enumerate(tableaux):
             if t is not None:
                 s = t.s
@@ -215,13 +170,15 @@ def drift(tableaux, config):
             if s == 2:
                 axs[i, j].plot(np.arange(config.lbound, config.ubound, (config.ubound - config.lbound)/config.l), x)
                 axs[i, j].set_yscale("log")
-                axs[i, j].set_xlabel("c_2")
-                axs[i, j].set_ylabel("| relative error |")
+                # axs[i, j].set_xlabel("c_2")
+                # axs[i, j].set_ylabel("| relative error |")
         
             elif s >= 3:
                 axs[i, j].imshow(x.reshape((config.l, config.l))[::-1,:], extent=[config.lbound, config.ubound, config.lbound, config.ubound], norm=colors.LogNorm())
                 if i == 0:
                     axs[i, j].set_title(f"{round(config.startt, 3)}")
+                if j == 0:
+                    axs[i, j].set_ylabel(ODEs[i][2])
                 # axs[i, j].set_xlabel("c_2")
                 # axs[i, j].set_ylabel("c_3")
                 # axs[j, i].colorbar()
@@ -231,44 +188,16 @@ def drift(tableaux, config):
     # plt.tight_layout()
     # plt.colorbar()
     plt.show()
-
-def test(config):
-    tableaux = []
-    step = (config.ubound - config.lbound) / config.l
-    for i in range(config.l):
-        c_3 = config.lbound + i * step
-        for j in range(config.l):
-            # print(i, j)
-            c_2 = config.lbound + j * step
-            try:
-                #   b[1](2 - 3*c[2] - 3*c[3] + 6*c[2]*c[3])/(6*c[2]*c[3]), b[2] -> (-2 + 3*c[3])/(6*c[2]*(-c[2] + c[3])), b[3] -> (-2 + 3*c[2])/(6*(c[2] - c[3])*c[3]), a[3][2] -> ((c[2] - c[3])*c[3])/(c[2]*(-2 + 3*c[2]))
-                b_1 = (2 - 3 * c_2 - 3 * c_3 + 6 * c_2 * c_3) / (6 * c_2 * c_3)
-                b_2 = (-2 + 3 * c_3) / (6 * c_2 * (-c_2 + c_3))
-                b_3 = (-2 + 3 * c_2) / (6 * c_3 * (c_2 - c_3))
-                a_32 = ((c_2 - c_3) * c_3) / (c_2 * (-2 + 3 * c_2))
-
-                a_21 = c_2
-                a_31 = c_3 - a_32
-
-                tableau = Tableau(
-                    ["c_2", "c_3", "b_1", "b_2", "b_3", "a_21", "a_31", "a_32"],
-                    [c_2, c_3, b_1, b_2, b_3, a_21, a_31, a_32],
-                    3 
-                )
-                tableaux.append(tableau)
-            except:
-                tableaux.append(None)
-            
-    return tableaux
+    plt.clf()
 
 if __name__ == "__main__":
     s = 3
     symbols, equations = generate_system(s)
     pretty.add_system(symbols, equations)
 
-    config = Config(40, -2.0, 2.0)
+    config = Config(100, -2.0, 2.0)
     # tableaux = gen_tableaux(symbols, equations, s, config)
-    tableaux = test2(symbols, equations, s, config)
+    tableaux = gen_tableaux(symbols, equations, s, config)
     # tableaux = test(config)
     for t in tableaux:
         pretty.add_tableau(t)
