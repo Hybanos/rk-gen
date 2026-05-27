@@ -63,16 +63,17 @@ def write_trees():
 
         header = ""
         if order != last_order:
-            header = f"#line(length: 100%)\n=== n={order}"
+            header = f")#line(length: 100%)\n=== n={order}\n#table(columns: 4, align: center + horizon, inset: 20pt, "
             last_order = order
+
         out = f"""{header}
-{str(t)}
-#rk-tree[{out}]
-$Phi(t) = sum {out_conf["trees"][t]["phi"].replace(" * ", " ")} quad
-t! = {out_conf['trees'][t]["fact"]}$
-#linebreak()
+    "{str(t)}",
+    rk-tree[{out}],
+    $Phi(t) = sum {out_conf["trees"][t]["phi"].replace(" * ", " ")}$,
+    $t! = {out_conf['trees'][t]["fact"]}$,
 """
         out_conf["file"].write(out)
+    out_conf["file"].write(")")
 
 def write_equations():
     sys = ""

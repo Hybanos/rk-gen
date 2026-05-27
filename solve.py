@@ -169,10 +169,8 @@ if __name__ == "__main__":
     symbols, equations = generate_system(s)
     pretty.add_system(symbols, equations)
 
-    config = Config(50, -2.0, 2.0)
-    # tableaux = gen_tableaux(symbols, equations, s, config)
+    config = Config(10, -2.0, 2.0)
     tableaux = gen_tableaux(symbols, equations, s, config)
-    # tableaux = test(config)
     for t in tableaux:
         pretty.add_tableau(t)
     # compare(tableaux, config)
