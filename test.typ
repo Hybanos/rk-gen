@@ -153,7 +153,11 @@ $
 $
 )
 
-$ Phi(t) &= sum_(i j) b_i c_i^2 a_(i j) c_j^2 \
- t! &= 18 $
+$ 
+t! &= 18 \
+\
+\
+Phi(t) &= sum_(i j) b_i c_i^2 a_(i j) c_j^2 \
+ $
 
 $ "[..[..]]"! = 1 times 1 times 3 times 1 times 1 times 6 = 18$
