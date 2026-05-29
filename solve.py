@@ -77,8 +77,8 @@ def gen_tableaux(symbols, equations, s, config):
                     vals_ind[k] = 0
 
         # check params == 0 or diagonal
-        if any(map(lambda x: abs(x) < 0.01, vals)) \
-        or abs(vals[0] - sum(vals[1:])) < 0.01:
+        if any(map(lambda x: abs(x) < 0.0001, vals)) \
+        or abs(vals[0] - sum(vals[1:])) < 0.0001:
             tableaux.append(None)
             continue
 
@@ -94,7 +94,7 @@ def gen_tableaux(symbols, equations, s, config):
 def compare(tableaux, config):
     config.dt = 0.01
     config.startt = 0.0
-    config.endt = 10.0
+    config.endt = 1.0
     s = 0
     sols = np.zeros((len(ODEs), len(tableaux)))
     for i, t in enumerate(tableaux):
@@ -102,6 +102,7 @@ def compare(tableaux, config):
             s = t.s
             err = testall(t, config)
             sols.T[i] = np.abs(err)
+            # sols.T[i] = err
         else:
             sols.T[i] = float("nan")
 
@@ -114,25 +115,28 @@ def compare(tableaux, config):
     
         elif s >= 3:
             plt.imshow(x.reshape((config.l, config.l))[::-1,:], extent=[config.lbound, config.ubound, config.lbound, config.ubound], norm=colors.LogNorm())
+            # plt.imshow(x.reshape((config.l, config.l))[::-1,:], extent=[config.lbound, config.ubound, config.lbound, config.ubound], norm=colors.CenteredNorm())
             plt.xlabel("c_2")
             plt.ylabel("c_3")
+            plt.title(ODEs[i][2])
             plt.colorbar()
 
         plt.tight_layout()
         plt.savefig(f"errs_{i}.svg")
-        plt.show()
+        # plt.show()
         pretty.add_pic(f"errs_{i}.svg")
         plt.clf()
 
 def drift(tableaux, config):
-    # config.dt = 0.004
-    # config.startt = 0.33
-    step = 1.0
-    config.dt = 0.01
-    config.startt = 0.0
-    config.endt = config.startt + step 
+    n = 5
 
-    n = 8
+    step = np.pi * 2 / n
+    config.dt = 0.01
+    # trange = 0.01 * 50
+    trange = config.dt
+    config.startt = 0.0
+    config.endt = config.startt + trange
+
     fig, axs = plt.subplots(len(ODEs), n)
 
     for j in range(n):
@@ -144,6 +148,7 @@ def drift(tableaux, config):
                 s = t.s
                 err = testall(t, config)
                 sols.T[i] = np.abs(err)
+                # sols.T[i] = err
             else:
                 sols.T[i] = float("nan")
 
@@ -151,16 +156,22 @@ def drift(tableaux, config):
             if s == 2:
                 axs[i, j].plot(np.arange(config.lbound, config.ubound, (config.ubound - config.lbound)/config.l), x)
                 axs[i, j].set_yscale("log")
+                if i == 0:
+                    axs[i, j].set_title(f"{round(config.startt, 3)}")
+                if j == 0:
+                    axs[i, j].set_ylabel(ODEs[i][2])
         
             elif s >= 3:
+                # axs[i, j].imshow(x.reshape((config.l, config.l))[::-1,:], extent=[config.lbound, config.ubound, config.lbound, config.ubound], norm=colors.SymLogNorm(1e-16), cmap="coolwarm")
                 axs[i, j].imshow(x.reshape((config.l, config.l))[::-1,:], extent=[config.lbound, config.ubound, config.lbound, config.ubound], norm=colors.LogNorm())
                 if i == 0:
                     axs[i, j].set_title(f"{round(config.startt, 3)}")
                 if j == 0:
                     axs[i, j].set_ylabel(ODEs[i][2])
         config.startt += step 
-        config.endt +=  step
+        config.endt = config.startt + trange
 
+    plt.suptitle(str(config))
     plt.show()
     plt.clf()
 
@@ -169,11 +180,11 @@ if __name__ == "__main__":
     symbols, equations = generate_system(s)
     pretty.add_system(symbols, equations)
 
-    config = Config(10, -2.0, 2.0)
+    config = Config(100, -2.0, 2.0)
     tableaux = gen_tableaux(symbols, equations, s, config)
     for t in tableaux:
         pretty.add_tableau(t)
     # compare(tableaux, config)
-    pretty.render()
     drift(tableaux, config)
+    pretty.render()
     cache.save()

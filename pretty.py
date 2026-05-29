@@ -100,7 +100,8 @@ def write_pics():
 
 def write_tableaux():
     out = f"Found {len(out_conf["tableaux"])} butcher tableaux"
-    for tableau in out_conf["tableaux"]:
+    size = min(len(out_conf["tableaux"]), 500)
+    for tableau in out_conf["tableaux"][:size]:
         if tableau is None:
             continue
         out += f"""

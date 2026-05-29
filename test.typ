@@ -168,8 +168,14 @@ $ "[..[..]]"! = 1 times 1 times 3 times 1 times 1 times 6 = 18$
 #let o = text.with(fill: orange)
 
 $
-  
   sum_(#r("i") #g("j"))^#o("6") b_#r("i") c_#r("i")^2 a_(#r("i") #g("j")) c_#g("j")^2 \
   ⇓ \
   b_#r("1") c_#r("1")^2 a_(#r("1") #g("2")) c_#g("2")^2 + b_#r("2") c_#r("2")^2 a_(#r("2") #g("1")) c_#g("1")^2 + dots + b_#r("5") c_#r("5")^2 a_(#r("5") #g("6")) c_#g("6")^2 = 1 / #b("18")
+$
+
+#pagebreak()
+Equation de Riccati :
+$
+  (d y) / (d x) &= -2y^2 + x(2x + 3)y - x \
+  y(x) &= 1 / (2x + 3)
 $
