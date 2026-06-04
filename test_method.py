@@ -56,11 +56,11 @@ ODEs = [
     #     lambda x: np.arcsin(-np.log(np.abs(np.cos(x)))),
     #     "tan(x) / cos(y)"
     # ),
-    # (
-    #     lambda x, y: -(3 * x * x + 1) * y,
-    #     lambda x: 5 * np.exp(-x**3 - x),
-    #     "-(3x²+1)y"
-    # )
+    (
+        lambda x, y: -(3 * x * x + 1) * y,
+        lambda x: 5 * np.exp(-x**3 - x),
+        "-(3x²+1)y"
+    )
 ]
 
 def testall(tableau, config):
@@ -100,8 +100,8 @@ def abstract_rk(ode, tableau, config):
 
         t += dt
 
-    return (Y - exact(t)) / abs(exact(t)) 
-    # return (Y - exact(t))
+    # return (Y - exact(t)) / abs(exact(t)) 
+    return (Y - exact(t))
 
 if __name__ == "__main__":
     tableau = Tableau(

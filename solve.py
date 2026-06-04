@@ -55,6 +55,7 @@ def gen_tableaux(symbols, equations, s, config):
     print("Equations:", *equations, sep="\n", end="\n\n")
     print("Variables:", *solve_for, sep="\n", end="\n\n")
     res = solve(equations, solve_for)
+    print(res)
     if s == 2:
         res = list(res.values())
     if s == 3:
@@ -131,6 +132,7 @@ def drift(tableaux, config):
     n = 5
 
     step = np.pi * 2 / n
+    step = 0.002
     config.dt = 0.01
     # trange = 0.01 * 50
     trange = config.dt
@@ -156,6 +158,7 @@ def drift(tableaux, config):
             if s == 2:
                 axs[i, j].plot(np.arange(config.lbound, config.ubound, (config.ubound - config.lbound)/config.l), x)
                 axs[i, j].set_yscale("log")
+                axs[i, j].grid(which="both")
                 if i == 0:
                     axs[i, j].set_title(f"{round(config.startt, 3)}")
                 if j == 0:
@@ -176,7 +179,7 @@ def drift(tableaux, config):
     plt.clf()
 
 if __name__ == "__main__":
-    s = 3
+    s = 4
     symbols, equations = generate_system(s)
     pretty.add_system(symbols, equations)
 
