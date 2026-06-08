@@ -9,7 +9,6 @@ from treegen import Node, gen
 from phi_t import Factor, Factors, label_tree, generate_factors
 from test_method import testall, Config, ODEs
 from tableau import Tableau, cache
-from linear_system import gauss
 
 def generate_system(s):
     equations = []
@@ -28,7 +27,7 @@ def generate_system(s):
     symbols.sort(key=lambda x: str(x))
     return symbols, equations
 
-def newton_rapson(symbols, equations, s, config):
+def newton(symbols, equations, s, config):
     # add obious condition: c_i = \sum_j a_ij
     for i in range(s-1):
         eq = []
@@ -56,16 +55,19 @@ def newton_rapson(symbols, equations, s, config):
     lb_equations = lambdify(symbols, equations)
     lb_jacobi = lambdify(symbols, jacobian_matrix)
 
-    x = np.array([0.5 for _ in range(len(symbols))])
-    # gauss(np.array(lb_jacobi(*x)), np.array(lb_equations(*x)))
+    x = np.array([0.333 for k in range(len(symbols))])
 
-    while True:
-        A = np.array(lb_jacobi(*x))
-        b = np.array(lb_equations(*x))
-        x = lin_solve(A, b)
-        print(x)
-        # x = x - (np.array(lb_equations(*x)) / np.array(lb_jacobi(*x)))
+    tol = 1e-15
+    for i in range(100):
+        J = np.array(lb_jacobi(*x))
+        f = np.array(lb_equations(*x))
+        dx = np.linalg.solve(J.T @ J, -J.T @ f)
+        if np.max(np.abs(dx)) < tol:
+            break
         # print(x)
+        x = x + dx
+    print(x)
+
 
 
 def gen_tableaux(symbols, equations, s, config):
@@ -225,7 +227,7 @@ if __name__ == "__main__":
     pretty.add_system(symbols, equations)
 
     config = Config(100, -2.0, 2.0)
-    tableaux = newton_rapson(symbols, equations, s, config)
+    tableaux = newton(symbols, equations, s, config)
     # tableaux = gen_tableaux(symbols, equations, s, config)
     # for t in tableaux:
     #     pretty.add_tableau(t)
