@@ -1,13 +1,15 @@
-from sympy import sympify, solve, lambdify
+from sympy import sympify, solve, lambdify, diff
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors 
+from scipy.linalg import solve as lin_solve
 
 import pretty
 from treegen import Node, gen
 from phi_t import Factor, Factors, label_tree, generate_factors
 from test_method import testall, Config, ODEs
 from tableau import Tableau, cache
+from linear_system import gauss
 
 def generate_system(s):
     equations = []
@@ -25,6 +27,45 @@ def generate_system(s):
     symbols = list(symbols)
     symbols.sort(key=lambda x: str(x))
     return symbols, equations
+
+def newton_rapson(symbols, equations, s, config):
+    # add obious condition: c_i = \sum_j a_ij
+    for i in range(s-1):
+        eq = []
+        for j in range(i+1):
+            eq.append(f"a_{i+2}{j+1}")
+            sym = f"a_{i+2}{j+1}"
+            if sym not in map(str, symbols):
+                symbols.append(sympify(sym))
+        equations.append(sympify(" + ".join(eq) + f" - c_{i+2}"))
+    
+    symbols.sort(key=lambda x: str(x))
+
+    # Jacobian
+    jacobian_matrix = []
+    for i in range(len(equations)):
+        tmp = []
+        for j in range(len(symbols)):
+            tmp.append(diff(equations[i], symbols[j]))
+        jacobian_matrix.append(tmp)
+
+    print(equations)
+    print(*jacobian_matrix, sep="\n", end="\n\n")
+
+    # lambify
+    lb_equations = lambdify(symbols, equations)
+    lb_jacobi = lambdify(symbols, jacobian_matrix)
+
+    x = np.array([0.5 for _ in range(len(symbols))])
+    # gauss(np.array(lb_jacobi(*x)), np.array(lb_equations(*x)))
+
+    while True:
+        A = np.array(lb_jacobi(*x))
+        b = np.array(lb_equations(*x))
+        x = lin_solve(A, b)
+        print(x)
+        # x = x - (np.array(lb_equations(*x)) / np.array(lb_jacobi(*x)))
+        # print(x)
 
 
 def gen_tableaux(symbols, equations, s, config):
@@ -179,15 +220,16 @@ def drift(tableaux, config):
     plt.clf()
 
 if __name__ == "__main__":
-    s = 4
+    s = 3
     symbols, equations = generate_system(s)
     pretty.add_system(symbols, equations)
 
     config = Config(100, -2.0, 2.0)
-    tableaux = gen_tableaux(symbols, equations, s, config)
-    for t in tableaux:
-        pretty.add_tableau(t)
-    # compare(tableaux, config)
-    drift(tableaux, config)
-    pretty.render()
-    cache.save()
+    tableaux = newton_rapson(symbols, equations, s, config)
+    # tableaux = gen_tableaux(symbols, equations, s, config)
+    # for t in tableaux:
+    #     pretty.add_tableau(t)
+    # # compare(tableaux, config)
+    # drift(tableaux, config)
+    # pretty.render()
+    # cache.save()
