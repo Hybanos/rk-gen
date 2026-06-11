@@ -18,6 +18,10 @@ class Tableau:
                 self.A[i,j] = d.get(f"a_{i+1}{j+1}", 0)
         self.dict = d
     
+    def to_array(self):
+        out = np.array(list(self.dict.values()))
+        return out
+    
     def serialize(self):
         return {
             "c": self.c.tolist(),

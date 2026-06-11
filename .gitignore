@@ -2,5 +2,7 @@
 *.svg
 *.json
 *.txt
+*.png
+out/
 out.typ
 __pycache__/

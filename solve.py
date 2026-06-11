@@ -27,7 +27,7 @@ def generate_system(s):
     symbols.sort(key=lambda x: str(x))
     return symbols, equations
 
-def newton(symbols, equations, s, config):
+def newton(symbols, equations, s, config, guesses=50000, cap=5000, max_steps=100):
     # add obious condition: c_i = \sum_j a_ij
     for i in range(s-1):
         eq = []
@@ -55,20 +55,60 @@ def newton(symbols, equations, s, config):
     lb_equations = lambdify(symbols, equations)
     lb_jacobi = lambdify(symbols, jacobian_matrix)
 
-    x = np.array([0.333 for k in range(len(symbols))])
-
-    tol = 1e-15
-    for i in range(100):
-        J = np.array(lb_jacobi(*x))
-        f = np.array(lb_equations(*x))
-        dx = np.linalg.solve(J.T @ J, -J.T @ f)
-        if np.max(np.abs(dx)) < tol:
+    tol = 1e-3
+    out_params = []
+    fails = 0
+    skips = 0
+    for k in range(guesses):
+        if len(out_params) > cap:
             break
-        # print(x)
-        x = x + dx
-    print(x)
+        log = f"random search {k} : {round(k / guesses * 100, 3)}%, {len(out_params)} found. f={fails}, s={skips}    "
+        print(log, end="\r")
+        x = np.random.random((len(symbols))) * (config.ubound - config.lbound) + config.lbound
+        try:
+            i = 0
+            while True:
+                i += 1
+                if i > max_steps:
+                    skips += 1
+                    raise Exception()
+                if any(np.isnan(x)):
+                    raise Exception()
+                J = np.array(lb_jacobi(*x))
+                f = np.array(lb_equations(*x))
+                dx = np.linalg.solve(J.T @ J, -J.T @ f)
+                alpha = 1.0
+                # backtracking
+                while np.linalg.norm(lb_equations(*(x + alpha*dx))) > (1 - 1e-4*alpha)*np.linalg.norm(f):
+                    alpha = alpha * 0.5
+                    if alpha < 1e-12:
+                        raise Exception()
+                # if not i%1000:
+                    # print(f, i, log, sep="\n")
+                if np.max(np.abs(f)) < tol:
+                    break
+                x = x + alpha * dx
+            
+            # filter "bad" solutions
+            # if np.max(np.abs(x)) > 10:
+            #     skips += 1
+            #     continue
+            print("\n", x, "\n")
+            out_params.append(x)
+        except KeyboardInterrupt as e:
+            raise e
+        except Exception as e:
+            fails += 1
+            # print(e)
+            pass
 
-
+    print("\ndone", " "*50)
+    # print(*out_params, sep="\n")
+    tableaux = []
+    for o in out_params:
+        tableaux.append(Tableau(symbols, o, s))
+    
+    return tableaux 
 
 def gen_tableaux(symbols, equations, s, config):
     missing = len(symbols) - len(equations)
@@ -135,6 +175,7 @@ def gen_tableaux(symbols, equations, s, config):
 
     return tableaux
 
+
 def compare(tableaux, config):
     config.dt = 0.01
     config.startt = 0.0
@@ -172,7 +213,7 @@ def compare(tableaux, config):
         plt.clf()
 
 def drift(tableaux, config):
-    n = 5
+    n = 4
 
     step = np.pi * 2 / n
     step = 0.002
@@ -227,11 +268,11 @@ if __name__ == "__main__":
     pretty.add_system(symbols, equations)
 
     config = Config(100, -2.0, 2.0)
-    tableaux = newton(symbols, equations, s, config)
-    # tableaux = gen_tableaux(symbols, equations, s, config)
-    # for t in tableaux:
-    #     pretty.add_tableau(t)
-    # # compare(tableaux, config)
-    # drift(tableaux, config)
-    # pretty.render()
+    # tableaux = newton(symbols, equations, s, config)
+    tableaux = gen_tableaux(symbols, equations, s, config)
+    for t in tableaux:
+        pretty.add_tableau(t)
+    # compare(tableaux, config)
+    drift(tableaux, config)
+    pretty.render()
     # cache.save()
