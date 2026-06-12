@@ -183,3 +183,25 @@ $
   (d y) / (d x) &= -2y^2 + x(2x + 3)y - x \
   y(x) &= 1 / (2x + 3)
 $
+
+#pagebreak()
+
+$
+  y(x)' &= f(x, y(x))\
+  \
+  y(x_0) &= y_0
+$
+
+$
+  F_(a\/b) = G (M_a M_b)/d^2
+$
+$
+  F = m a
+$
+$
+  a = (partial^2 x) / (partial t^2)
+
+$
+$
+  d = x_a - x_b
+$
