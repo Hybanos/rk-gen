@@ -58,8 +58,9 @@ def test():
         # ax2.set_yscale("symlog", linthresh=1e-10)
         axs[j].set_title(ODEs[j][2])
         axs[j].grid(which="both")
+        axs[j].legend()
 
-    plt.legend()
+    # plt.legend()
     plt.suptitle("[RK2] c_2 value with the lowest error")
     plt.show()
 
@@ -73,7 +74,7 @@ def nd_rotate(n, i, j, theta):
     return R
 
 def explore():
-    s = 9
+    s = 3
 
     config = Config(100, -1, 1)
     config.dt = 0.01
@@ -83,20 +84,20 @@ def explore():
     symbols, equations = generate_system(s)
     pretty.add_system(symbols, equations)
 
-    tableaux = newton(symbols, equations, s, config, guesses=50, max_steps=1000000, cap=5000)
+    tableaux = newton(symbols, equations, s, config, guesses=5000, max_steps=1000000, cap=5000)
     for t in tableaux:
         pretty.add_tableau(t)
 
     n = len(tableaux[0].to_array())
     errors = np.zeros((len(tableaux)))
     u = np.random.randn(n, 3)
-    # u = np.zeros((n, 3))
+    u = np.zeros((n, 3))
     # u[6][0] = 1
     # u[7][1] = 1
     # u[2][2] = 1
-    # u[-1][0] = 1
-    # u[-2][1] = 1
-    # u[-3][2] = 1
+    u[-1][0] = 1
+    u[-2][1] = 1
+    u[-3][2] = 1
     u, _ = np.linalg.qr(u)
     def get_proj(R=None):
         if R is None:
@@ -117,7 +118,7 @@ def explore():
 
     counter = [0]
     def on_press(event):
-        s.set_val(s.val + 0.5)
+        s.set_val(s.val + 1.0)
         test(0)
         # fig.savefig(f"out/{counter[0]}.png", dpi=150)
         counter[0] += 1
@@ -180,5 +181,5 @@ def explore():
     pretty.render()
 
 if __name__ == "__main__":
-    # test()
-    explore()
+    test()
+    # explore()

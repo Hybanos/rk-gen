@@ -40,7 +40,6 @@ class Node:
     
     def print_with_labels(self):
         print(self.__repr_labels__())
-
     
     def __lt__(self, other):
         return self.id() < other.id()

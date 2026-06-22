@@ -55,7 +55,7 @@ def newton(symbols, equations, s, config, guesses=50000, cap=5000, max_steps=100
     lb_equations = lambdify(symbols, equations)
     lb_jacobi = lambdify(symbols, jacobian_matrix)
 
-    tol = 1e-3
+    tol = 1e-12
     out_params = []
     fails = 0
     skips = 0
@@ -90,10 +90,10 @@ def newton(symbols, equations, s, config, guesses=50000, cap=5000, max_steps=100
                 x = x + alpha * dx
             
             # filter "bad" solutions
-            # if np.max(np.abs(x)) > 10:
-            #     skips += 1
-            #     continue
-            print("\n", x, "\n")
+            if np.max(np.abs(x)) > 5:
+                skips += 1
+                continue
+            # print("\n", x, "\n")
             out_params.append(x)
         except KeyboardInterrupt as e:
             raise e
