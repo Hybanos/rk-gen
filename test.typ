@@ -220,5 +220,7 @@ $
 #pagebreak()
 
 $
-  (d^2 x^mu) / (d s^2) = - Gamma^mu_(alpha beta) (d x^alpha) / (d s) (d x^beta) / d s
+  (d^2 x^mu) / (d s^2) = - Gamma^mu_(alpha beta) (d x^alpha) / (d s) (d x^beta) / (d s)\
+  x_0 = (x^0_0, x^1_0, x^2_0, x^3_0, (d x^0_0) / (d s), (d x^1_0) / (d s), (d x^2_0) / (d s), (d x^3_0) / (d s))
+
 $
