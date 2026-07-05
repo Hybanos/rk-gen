@@ -40,7 +40,6 @@ class Node:
     
     def print_with_labels(self):
         print(self.__repr_labels__())
-
     
     def __lt__(self, other):
         return self.id() < other.id()
@@ -107,14 +106,13 @@ def _gen(root, nodes_left):
         node.children.remove(add)
 
 if __name__ == "__main__":
-    # a = range(1, 5)
+    a = range(1, 11)
     # # a = [4]
-    # for i in a:
-    #     print(f"===== N = {i} =====")
-    #     n = 0
-    #     for t in gen(i):
-    #         print(t)
-    #         print(t.fact())
-    #         n += 1
-    #     print(f"Size = {n}\n")
-    print(from_text("[[.]]"))
+    for i in a:
+        print(f"===== N = {i} =====")
+        n = 0
+        for t in gen(i):
+            print(t)
+            print(t.fact())
+            n += 1
+        print(f"Size = {n}\n")

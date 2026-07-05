@@ -20,11 +20,11 @@ ODEs = [
     #     lambda x: np.exp(x),
     #     "y"
     # ),
-    (
-        lambda x, y: y * y - y,
-        lambda x: 1 / (1 + np.exp(x)),
-        "y² - y"
-    ),
+    # (
+    #     lambda x, y: y * y - y,
+    #     lambda x: 1 / (1 + np.exp(x)),
+    #     "y² - y"
+    # ),
     (
         lambda x, y: np.cos(x),
         lambda x: np.sin(x),
@@ -41,26 +41,26 @@ ODEs = [
     #     lambda x: x,
     #     "y / x"
     # ),
-    # (
-    #     lambda x, y: np.exp(x) - y,
-    #     lambda x: 0.5 * np.exp(x) + np.exp(-x),
-    #     "e^x - y"
-    # ),
-    # (
-    #     lambda x, y: -2 * y * y + x * (2 * x + 3) * y - x,
-    #     lambda x:1 / (2 * x + 3),
-    #     "-2y²+x(2x+3)y - x"
-    # ),
+    (
+        lambda x, y: np.exp(x) - y,
+        lambda x: 0.5 * np.exp(x) + np.exp(-x),
+        "e^x - y"
+    ),
+    (
+        lambda x, y: -2 * y * y + x * (2 * x + 3) * y - x,
+        lambda x:1 / (2 * x + 3),
+        "-2y²+x(2x+3)y - x"
+    ),
     # (
     #     lambda x, y: np.tan(x) / np.cos(y),
     #     lambda x: np.arcsin(-np.log(np.abs(np.cos(x)))),
     #     "tan(x) / cos(y)"
     # ),
-    (
-        lambda x, y: -(3 * x * x + 1) * y,
-        lambda x: 5 * np.exp(-x**3 - x),
-        "-(3x²+1)y"
-    )
+    # (
+    #     lambda x, y: -(3 * x * x + 1) * y,
+    #     lambda x: 5 * np.exp(-x**3 - x),
+    #     "-(3x²+1)y"
+    # )
 ]
 
 def testall(tableau, config):

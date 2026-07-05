@@ -183,3 +183,44 @@ $
   (d y) / (d x) &= -2y^2 + x(2x + 3)y - x \
   y(x) &= 1 / (2x + 3)
 $
+
+#pagebreak()
+
+$
+  y(x)' &= f(x, y(x))\
+  \
+  y(x_0) &= y_0
+$
+
+$
+  y(x) &= integral f(x, y(x)) \
+  \
+  y(x_0) &= y_0
+$
+
+$
+  F_(a\/b) = G (M_a M_b)/d^2
+$
+$
+  F = m a
+$
+$
+  a = (d^2 x) / (d t^2)
+
+$
+$
+  d = x_a - x_b
+$
+
+$
+  P_(t+1) &= P_(t) + v_(t) times "dt" \
+  v_(t+1) &= v_(t) + F_(t) times "dt"
+$
+
+#pagebreak()
+
+$
+  (d^2 x^mu) / (d s^2) = - Gamma^mu_(alpha beta) (d x^alpha) / (d s) (d x^beta) / (d s)\
+  x_0 = (x^0_0, x^1_0, x^2_0, x^3_0, (d x^0_0) / (d s), (d x^1_0) / (d s), (d x^2_0) / (d s), (d x^3_0) / (d s))
+
+$
