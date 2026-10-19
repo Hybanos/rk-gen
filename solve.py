@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors 
 from scipy.linalg import solve as lin_solve
+from scipy.optimize import least_squares
 
 import pretty
 from treegen import Node, gen
@@ -86,6 +87,7 @@ def newton(symbols, equations, s, config, guesses=50000, cap=5000, max_steps=100
                 # if not i%1000:
                     # print(f, i, log, sep="\n")
                 if np.max(np.abs(f)) < tol:
+                    print("\n\n", i)
                     break
                 x = x + alpha * dx
             
@@ -109,6 +111,56 @@ def newton(symbols, equations, s, config, guesses=50000, cap=5000, max_steps=100
         tableaux.append(Tableau(symbols, o, s))
     
     return tableaux 
+
+def LM(s):
+    symbols, equations = generate_system(s)
+    pretty.add_system(symbols, equations)
+
+    # add obious condition: c_i = \sum_j a_ij
+    for i in range(s-1):
+        eq = []
+        for j in range(i+1):
+            eq.append(f"a_{i+2}{j+1}")
+            sym = f"a_{i+2}{j+1}"
+            if sym not in map(str, symbols):
+                symbols.append(sympify(sym))
+        equations.append(sympify(" + ".join(eq) + f" - c_{i+2}"))
+    
+    symbols.sort(key=lambda x: str(x))
+
+    # Jacobian
+    jacobian_matrix = []
+    for i in range(len(equations)):
+        tmp = []
+        for j in range(len(symbols)):
+            tmp.append(diff(equations[i], symbols[j]))
+        jacobian_matrix.append(tmp)
+
+    print(equations)
+    print(*jacobian_matrix, sep="\n", end="\n\n")
+
+    # lambify
+    lb_equations = lambdify(symbols, equations)
+    lb_jacobi = lambdify(symbols, jacobian_matrix)
+
+    x0 = np.random.rand(len(symbols))
+    x0 = [  0.46892478,  0.14261526,  0.0867623, -13.86722129,  0.44678603,
+    14.03909785 ,  0.72350357 ,  0.4697013 ,  -0.34536401,   0.0140855,
+    0.35709955  , 0.35067554  ,-0.49332022 ,  0.06186231 ,  0.50510435,
+    -1.64459387 ,  0.72215016 , 1.10114275,   0.0172103 ,   0.40561722,
+    0.38734762  , 0.09459662  , 0.34114574 ,  0.2238359  ,  0.01787722,
+    0.24796481  , 0.04744269  , 0.02713702 ,  0.46892478 ,  0.22937756,
+    0.61866259  , 0.86192636  , 0.78142153 ,  0.98887419]
+    print("init: ", x0)
+    result = least_squares(lambda x: lb_equations(*x), x0, jac="3-point", method="trf", x_scale="jac", max_nfev=10000, ftol=1e-15, xtol=1e-15, gtol=1e-15, verbose=2)
+    print("status: ", result.status)
+    print("x: ", result.x)
+    print("residual: ", result.fun)
+    print("residual sum: ", np.sum(result.fun))
+    print("f evals: ", result.nfev)
+    # print("optimality value: " , np.array(lb_jacobi(*result.x)).T @ np.array(lb_equations(*result.x)))
+    print("optimality value: " , result.optimality)
+    print("idk: ", np.linalg.svd(lb_jacobi(*result.x), compute_uv=False))
 
 def gen_tableaux(symbols, equations, s, config):
     missing = len(symbols) - len(equations)

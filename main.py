@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from matplotlib.widgets import Button, Slider
 
-from solve import generate_system, gen_tableaux, newton
+from solve import generate_system, gen_tableaux, newton, LM
 from test_method import Config, testall, ODEs
 
 import pretty
 
 def test():
-    s = 2
+    s = 3
 
     config = Config(300, -1.0, 1.0)
 
@@ -84,7 +84,7 @@ def explore():
     symbols, equations = generate_system(s)
     pretty.add_system(symbols, equations)
 
-    tableaux = newton(symbols, equations, s, config, guesses=5000, max_steps=1000000, cap=5000)
+    tableaux = newton(symbols, equations, s, config, guesses=50000, max_steps=1000000, cap=3000)
     for t in tableaux:
         pretty.add_tableau(t)
 
@@ -180,6 +180,8 @@ def explore():
     plt.show()
     pretty.render()
 
+
 if __name__ == "__main__":
-    test()
+    # test()
     # explore()
+    LM(7)

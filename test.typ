@@ -24,59 +24,78 @@
 #set text(14pt)
 
 #grid(
-  columns: 8,
-  align: center + bottom,
-  gutter: 60pt,
+  columns: 4,
+  align: center + alignment.horizon,
+  gutter: 30pt,
 
 
 rk-tree[
 - haha #node-attr(rotate: 180deg)
 ],
+$Phi(t) = sum b_i$,
+$t! = 1$,
+$b_1 + b_2 + b_3 = 1$,
 
 rk-tree[
 - haha #node-attr(rotate: 180deg)
   - haha
 ],
+$Phi(t) = sum b_i c_i$,
+$t! = 2$,
+$b_2 c_2 + b_3 c_3 = 1 / 2$,
 
 rk-tree[
 - haha #node-attr(rotate: 180deg)
   - haha
   - haha
 ],
+$Phi(t) = sum b_i c_i^2$,
+$t! = 3$,
+$b_2 c_2^2 + b_3 c_3^2 = 1/3$,
 
 rk-tree[
 - haha #node-attr(rotate: 180deg)
   - haha
     - haha
 ],
+$Phi(t) = sum b_i a_(i j) c_j$,
+$t! = 6$,
+$a_32 b_3 c_2 = 1/6$,
 
-rk-tree[
-- haha #node-attr(rotate: 180deg)
-  - haha
-  - haha
-  - haha
-],
+$
+  b_1 + b_2 + b_3 &= 1 \
+  b_2 c_2 + b_3 c_3 &= 1 / 2 \
+  b_2 c_2^2 + b_3 c_3^2 &= 1/3 \
+  a_32 b_3 c_2 &= 1/6 
+$
 
-rk-tree[
-- haha #node-attr(rotate: 180deg)
-  - haha
-  - haha
-    - haha
-],
+// rk-tree[
+// - haha #node-attr(rotate: 180deg)
+//   - haha
+//   - haha
+//   - haha
+// ],
 
-rk-tree[
-- haha #node-attr(rotate: 180deg)
-  - haha
-    - haha
-    - haha
-],
+// rk-tree[
+// - haha #node-attr(rotate: 180deg)
+//   - haha
+//   - haha
+//     - haha
+// ],
 
-rk-tree[
-- haha #node-attr(rotate: 180deg)
-  - haha
-    - haha
-      - haha
-]
+// rk-tree[
+// - haha #node-attr(rotate: 180deg)
+//   - haha
+//     - haha
+//     - haha
+// ],
+
+// rk-tree[
+// - haha #node-attr(rotate: 180deg)
+//   - haha
+//     - haha
+//       - haha
+// ]
 )
 
 #grid(
@@ -133,6 +152,22 @@ rk-tree[
       - haha
 ]
 )
+
+// #grid(
+//   columns: 2,
+//   align: center + bottom,
+//   gutter: 60pt,
+
+// rk-tree[
+// -haha #node-attr(rotate: 180deg)
+// ],
+
+// rk-tree[
+// -haha #node-attr(rotate: 180deg)
+//   -haha
+// ]
+// )
+
 #pagebreak()
 
 #set align(center)
