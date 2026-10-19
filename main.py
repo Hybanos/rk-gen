@@ -2,6 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from matplotlib.widgets import Button, Slider
+from sympy import sympify, solve, lambdify, diff
+
+from treegen import gen
+from phi_t import Factor, Factors, label_tree, generate_factors
+from solve import generate_system, gen_tableaux
 
 from solve import generate_system, gen_tableaux, newton, LM
 from test_method import Config, testall, ODEs
@@ -64,6 +69,53 @@ def test():
     plt.suptitle("[RK2] c_2 value with the lowest error")
     plt.show()
 
+def stats(s):
+    symbols = set()
+    equations = []
+    for i in range(1, s+1):
+        for t in gen(i):
+            label_tree(t)
+            factors = generate_factors(t)
+            lval = factors.sum(s) + f" - 1/{t.fact()}"
+            equations.append(lval)
+            symbols.update(sympify(lval).free_symbols)
+
+    symbols = list(map(str,symbols))
+    symbols.sort()
+
+    counts = np.zeros(len(symbols), dtype=int)
+    poly_total = 0
+    for eq in equations:
+        poly_total += eq.count("+") + 1
+        print(sympify(eq))
+        for i, symb in enumerate(symbols):
+            counts[i] += eq.count(str(symb))
+    
+    
+    a_count = s*(s-1)//2 - s + 1
+    b_count = s
+    c_count = s-1
+
+    a = list(map(str, symbols))[:a_count]
+    b = list(map(str, symbols))[a_count:a_count + b_count]
+    c = list(map(str, symbols))[a_count + b_count:]
+
+    plt.figure(figsize=(7, 5))
+    plt.bar(a, counts[:a_count]                 , label="a")
+    plt.bar(b, counts[a_count:a_count + b_count], label="b")
+    plt.bar(c, counts[a_count + b_count:]       , label="c")
+    plt.suptitle(f"s = {s}")
+    plt.title(f"{poly_total} total sub-polynomials")
+    # plt.tight_layout()
+    plt.xticks(rotation=90)
+    plt.legend()
+    # plt.show()
+    plt.savefig(f"bar_{s}.png")
+    plt.cla()
+
+if __name__ == "__main__":
+    stats(9)
+    # test()
 def nd_rotate(n, i, j, theta):
     R = np.eye(n)
     c, s = np.cos(theta), np.sin(theta)
@@ -182,6 +234,5 @@ def explore():
 
 
 if __name__ == "__main__":
-    # test()
+    test()
     # explore()
-    LM(7)
