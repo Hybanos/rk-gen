@@ -25,31 +25,35 @@ class Factors(list):
         self.ready()
 
     def sum(self, s):
-        out = ""
-        for k in k_permutations(len(self.labels), list(range(s))):
+        out = []
+        # for k in k_permutations(len(self.labels), list(range(s))):
+        for k in k_tuples(len(self.labels), s):
             d = {}
             for k, v in zip(self.labels, k):
                 d[k] = v
             
             is_zero = False
-            tmp = ""
+            tmp = []
             for f in self:
-                if len(f.nodes) == 2 and d[f.nodes[1].label] > d[f.nodes[0].label]:
+                if len(f.nodes) == 2 and d[f.nodes[1].label] >= d[f.nodes[0].label]:
                     is_zero = True
                 if f.type == "c" and d[f.nodes[0].label] == 0:
                     is_zero = True
-                tmp += f"{f.type}_{"".join(map(lambda x: str(d[x.label]+1), f.nodes))}"
-                tmp += " * "
+                tmp.append(f"{f.type}_{"".join(map(lambda x: str(d[x.label]+1), f.nodes))}")
 
             if not is_zero:
-                out += tmp
-                out = out[:-3] + " + "
-        out = out[:-3]
-        return out
+                tmp.sort()
+                tmp_s = " * ".join(tmp)
+                # if tmp_s not in out:
+                #     out.append(tmp_s)
+                out.append(tmp_s)
+        out_s = " + ".join(out)
+        # print(out_s, "\n")
+        return out_s
     
     def __repr__(self):
         return " * ".join([str(f) for f in self])
-    
+
 def k_permutations(k, elements):
     # DIRTY EW
     s = set()    
@@ -62,9 +66,10 @@ def k_permutations(k, elements):
         while True:
             # print(indices)
             out = tuple([perm[i] for i in indices[:-2]])
-            if out not in s:
-                s.add(out)
-                yield out
+            # if out not in s:
+            #     s.add(out)
+            #     yield out
+            yield out
             j = 0
             while indices[j] + 1 == indices[j+1]:
                 indices[j] = j
@@ -73,6 +78,17 @@ def k_permutations(k, elements):
                 break
             indices[j] = indices[j] + 1
         # print("")
+
+# Si tu fais un truc dans mon bureau, je t'achète un pack de redbull
+def k_tuples(n, k):
+    out = [0 for _ in range(n)]
+    for i in range(k**n):
+        yield out
+        out[0] += 1
+        for j in range(n-1):
+            if out[j] == k:
+                out[j] = 0
+                out[j+1] += 1 
 
 def permutations(elements):
     k = len(elements)

@@ -11,10 +11,10 @@ from phi_t import Factor, Factors, label_tree, generate_factors
 from test_method import testall, Config, ODEs
 from tableau import Tableau, cache
 
-def generate_system(s):
+def generate_system(p, s):
     equations = []
     symbols = set()
-    for i in range(1, s+1):
+    for i in range(1, p+1):
         for t in gen(i):
             pretty.add_tree(t)
             label_tree(t)
@@ -28,7 +28,7 @@ def generate_system(s):
     symbols.sort(key=lambda x: str(x))
     return symbols, equations
 
-def newton(symbols, equations, s, config, guesses=50000, cap=5000, max_steps=100):
+def newton(symbols, equations, s, config, guesses=500, cap=5000, max_steps=100):
     # add obious condition: c_i = \sum_j a_ij
     for i in range(s-1):
         eq = []
@@ -92,9 +92,9 @@ def newton(symbols, equations, s, config, guesses=50000, cap=5000, max_steps=100
                 x = x + alpha * dx
             
             # filter "bad" solutions
-            if np.max(np.abs(x)) > 5:
-                skips += 1
-                continue
+            # if np.max(np.abs(x)) > 5:
+            #     skips += 1
+            #     continue
             # print("\n", x, "\n")
             out_params.append(x)
         except KeyboardInterrupt as e:
@@ -315,16 +315,17 @@ def drift(tableaux, config):
     plt.clf()
 
 if __name__ == "__main__":
-    s = 3
-    symbols, equations = generate_system(s)
+    p = 3
+    s = 4
+    symbols, equations = generate_system(p, s)
+    print(*equations, sep="\n")
     pretty.add_system(symbols, equations)
 
-    config = Config(100, -2.0, 2.0)
-    # tableaux = newton(symbols, equations, s, config)
-    tableaux = gen_tableaux(symbols, equations, s, config)
+    config = Config(100, -4.0, 4.0)
+    tableaux = newton(symbols, equations, s, config, max_steps=10000, guesses= 100)
+    # tableaux = gen_tableaux(symbols, equations, s, config)
     for t in tableaux:
         pretty.add_tableau(t)
-    # compare(tableaux, config)
-    drift(tableaux, config)
+    # # compare(tableaux, config)
+    # drift(tableaux, config)
     pretty.render()
-    # cache.save()
