@@ -1,4 +1,5 @@
 from sympy import sympify, solve, lambdify, diff
+from collections import OrderedDict
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors 
@@ -21,41 +22,68 @@ class OP:
     ADD = "ADD"
     MUL = "MUL"
 
-class Node:
-    def __init__(self):
-        self.value = 0
-
-class Binary(Node):
+class Binary:
     def __init__(self, lhs, rhs, op):
         self.lhs = lhs
         self.rhs = rhs
         self.OP = op
         self.count = inc()
 
-    def __repr__(self):
+    def sort(self):
+        if self.lhs > self.rhs:
+            self.rhs, self.lhs = self.lhs, self.rhs
+
+    def debug(self):
         return f"BIN_{self.count}({self.lhs} {self.OP} {self.rhs})"
 
-class Leaf(Node):
+    def __lt__(self, o):
+        return self.__repr__() < o.__repr__()
+
+    def __repr__(self):
+        if self.OP == OP.ADD:
+            return f"({self.lhs} + {self.rhs})"
+        if self.OP == OP.MUL:
+            return f"{self.lhs} * {self.rhs}"
+
+    def __hash__(self):
+        return hash(self.__repr__())
+
+    def __eq__(self, o):
+        return self.__hash__() == o.__hash__()
+
+class Leaf:
     def __init__(self, symbol):
         self.symbol = symbol
         self.count = inc() 
 
-    def __repr__(self):
+    def sort(self):
+        pass
+
+    def debug(self):
         return f"LEAF_{self.count}({self.symbol})"
 
+    def __lt__(self, o):
+        return self.__repr__() < o.__repr__()
+
+    def __repr__(self):
+        return f"{self.symbol}"
+
     def __hash__(self):
-        return hash(self.symbol)
+        return hash(self.__repr__())
+
+    def __eq__(self, o):
+        return self.__hash__() == o.__hash__()
 
 class DAG:
     def __init__(self):
         self.layers = {}
         self.leaves = set()
-        self.roots = set()
-        self.expr_to_node = {}
+        self.roots = {}
+        self.hash_to_node = {}
 
     def count_operations(self):
         out = {}
-        for key, val in self.expr_to_node.items():
+        for key, val in self.hash_to_node.items():
             if not isinstance(val, Binary):
                 continue
             if val.OP not in out:
@@ -65,52 +93,76 @@ class DAG:
         return out
 
     def add_leaf(self, symbol):
-        leaf = Leaf(symbol)
+        leaf = self.get_or_hash_node(Leaf(symbol))
         self.leaves.add(leaf)
         return leaf
 
-    def add_expr(self, exp):
-        node = self.expr_to_node.get(exp, None)
-        if node is None:
-            node = self._add_expr(exp)
+    def get_or_hash_node(self, node):
+        node.sort()
+        node = self.hash_to_node.get(node, node)
+        self.hash_to_node[node] = node
+        return node
 
-        self.roots.add(exp)
+    def add_expr(self, exp, name):
+        node = self._add_expr(exp)
+        self.roots[name] = node
         return node
 
     def _add_expr(self, exp):
-        node = self.expr_to_node.get(exp, None)
-        if node is None:
-            if " + " in exp:
-                products = exp.split(" + ")
-                products.sort()
-                n = len(products) // 2
-                lhs = " + ".join(products[:n])
-                rhs = " + ".join(products[n:])
-                # lhs = " + ".join(products[:-1])
-                # rhs = products[-1]
-                node = Binary(self._add_expr(lhs), self._add_expr(rhs), OP.ADD)
+        if " + " in exp:
+            products = exp.split(" + ")
+            n = len(products) // 2
+            lhs = " + ".join(products[:n])
+            rhs = " + ".join(products[n:])
+            # lhs = " + ".join(products[:-1])
+            # rhs = products[-1]
+            node = Binary(self._add_expr(lhs), self._add_expr(rhs), OP.ADD)
 
-            elif " * " in exp:
-                factors = exp.split(" * ")
-                factors.sort()
-                n = len(factors) // 2
-                lhs = " * ".join(factors[:n])
-                rhs = " * ".join(factors[n:])
-                # lhs = " * ".join(factors[:-1])
-                # rhs = factors[-1]
-                node = Binary(self._add_expr(lhs), self._add_expr(rhs), OP.MUL)
+        elif " * " in exp:
+            factors = exp.split(" * ")
+            n = len(factors) // 2
+            lhs = " * ".join(factors[:n])
+            rhs = " * ".join(factors[n:])
+            # lhs = " * ".join(factors[:-1])
+            # rhs = factors[-1]
+            node = Binary(self._add_expr(lhs), self._add_expr(rhs), OP.MUL)
 
-            else:
-                node = Leaf(exp)
-                self.leaves.add(node)
+        else:
+            node = self.get_or_hash_node(Leaf(exp))
 
-            self.expr_to_node[exp] = node
+        return self.get_or_hash_node(node)
 
+    def differentiate_node(self, node, variable: Leaf, name):
+        node = self._differentiate_node(node, variable)
+        self.roots[name] = node
         return node
 
+    def _differentiate_node(self, node, variable: Leaf):
+        out = None
+        if isinstance(node, Leaf):
+            if node == variable:
+                out = Leaf("1")
+            else:
+                out = Leaf("0")
+            out = self.get_or_hash_node(out)
+            self.leaves.add(out)
+
+        else:
+            if   node.OP == OP.ADD:
+                out = Binary(self._differentiate_node(node.lhs, variable), self._differentiate_node(node.rhs, variable), OP.ADD)
+            elif node.OP == OP.MUL:
+                lhs = Binary(self._differentiate_node(node.lhs, variable), node.rhs, OP.MUL)
+                rhs = Binary(node.lhs, self._differentiate_node(node.rhs, variable), OP.MUL)
+                lhs = self.get_or_hash_node(lhs)
+                rhs = self.get_or_hash_node(rhs)
+                out = Binary(lhs, rhs, OP.ADD)
+
+        return self.get_or_hash_node(out) 
+
     def build_layers(self):
-        for exp in self.roots:
-            self._build_layers(self.expr_to_node[exp])
+        self.layers = {}
+        for name, node in self.roots.items():
+            self._build_layers(node)
 
     def _build_layers(self, node):
         layer = 0
@@ -126,7 +178,7 @@ class DAG:
 
     def eval(self, symbol_to_value):
         for key, value in symbol_to_value.items():
-            self.expr_to_node[key].value = value
+            self.get_or_hash_node(Leaf(key)).value = value
 
         for i in range(1, len(self.layers)):
             layer = self.layers[i]
@@ -163,33 +215,43 @@ if __name__ == "__main__":
             factors = generate_factors(t)
             eq.append(factors.sum(s))
 
-    # print(*eq, sep="\n", end="\n\n")
-
     operations = {
         OP.ADD: 0,
         OP.MUL: 0,
     }
 
     dag = DAG()
-    for e in eq:
-        dag.add_expr(e)
+    for i, e in enumerate(eq):
+        dag.add_expr(e, f"f_{i}")
         operations[OP.ADD] += e.count(" + ")
         operations[OP.MUL] += e.count(" * ")
 
     print(operations)
     print(dag.count_operations())
 
-    dag.build_layers()
-    for layer, nodes in dag.layers.items():
-        print(layer, nodes)
-    print()
-
     symbols = set()
+    symbol_values = {}
     for e in eq:
         symbols.update(list(map(str, sympify(e).free_symbols)))
-    symbols = dict(zip(symbols, range(1, len(symbols)+1)))
-    print(symbols)
+    symbol_list = list(symbols)
+    symbol_list.sort()
+    symbol_values = OrderedDict(zip(symbol_list, range(1, len(symbols)+1)))
+    for i in range(p-1):
+        symbol_values[f"{i}"] = i
+    print(symbol_values)
 
-    dag.eval(symbol_to_value=symbols)
-    for exp in dag.roots:
-        print(exp, dag.expr_to_node[exp], dag.expr_to_node[exp].value)
+    for sym in symbols:
+        i = 0
+        for name in [f"f_{i}" for i in range(len(eq))]:
+            node = dag.roots[name]
+            dag.differentiate_node(node, dag.hash_to_node[sym], f"∂f_{i}/∂{sym}")
+            i += 1
+
+    print()
+    dag.build_layers()
+    dag.eval(symbol_to_value=symbol_values)
+    for name, node in dag.roots.items():
+        print(name, node, node.value)
+    print(dag.count_operations())
+
+
