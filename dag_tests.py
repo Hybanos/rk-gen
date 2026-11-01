@@ -34,7 +34,7 @@ class Binary:
             self.rhs, self.lhs = self.lhs, self.rhs
 
     def debug(self):
-        return f"BIN_{self.count}({self.lhs} {self.OP} {self.rhs})"
+        return f"BIN_{self.count}({self.lhs.debug()} {self.OP} {self.rhs.debug()})"
 
     def __lt__(self, o):
         return self.__repr__() < o.__repr__()
@@ -76,31 +76,25 @@ class Leaf:
 
 class DAG:
     def __init__(self):
-        self.layers = {}
-        self.leaves = set()
+        self.layer_hashes = {}
         self.roots = {}
         self.hash_to_node = {}
 
     def count_operations(self):
         out = {}
-        for key, val in self.hash_to_node.items():
-            if not isinstance(val, Binary):
+        for node in self.hash_to_node.values():
+            if not isinstance(node, Binary):
                 continue
-            if val.OP not in out:
-                out[val.OP] = 0
-            out[val.OP] += 1
+            if node.OP not in out:
+                out[node.OP] = 0
+            out[node.OP] += 1
 
         return out
 
-    def add_leaf(self, symbol):
-        leaf = self.get_or_hash_node(Leaf(symbol))
-        self.leaves.add(leaf)
-        return leaf
-
     def get_or_hash_node(self, node):
         node.sort()
-        node = self.hash_to_node.get(node, node)
-        self.hash_to_node[node] = node
+        node = self.hash_to_node.get(hash(node), node)
+        self.hash_to_node[hash(node)] = node
         return node
 
     def add_expr(self, exp, name):
@@ -114,8 +108,6 @@ class DAG:
             n = len(products) // 2
             lhs = " + ".join(products[:n])
             rhs = " + ".join(products[n:])
-            # lhs = " + ".join(products[:-1])
-            # rhs = products[-1]
             node = Binary(self._add_expr(lhs), self._add_expr(rhs), OP.ADD)
 
         elif " * " in exp:
@@ -123,12 +115,10 @@ class DAG:
             n = len(factors) // 2
             lhs = " * ".join(factors[:n])
             rhs = " * ".join(factors[n:])
-            # lhs = " * ".join(factors[:-1])
-            # rhs = factors[-1]
             node = Binary(self._add_expr(lhs), self._add_expr(rhs), OP.MUL)
 
         else:
-            node = self.get_or_hash_node(Leaf(exp))
+            node = Leaf(exp)
 
         return self.get_or_hash_node(node)
 
@@ -144,8 +134,6 @@ class DAG:
                 out = Leaf("1")
             else:
                 out = Leaf("0")
-            out = self.get_or_hash_node(out)
-            self.leaves.add(out)
 
         else:
             if   node.OP == OP.ADD:
@@ -160,8 +148,8 @@ class DAG:
         return self.get_or_hash_node(out) 
 
     def build_layers(self):
-        self.layers = {}
-        for name, node in self.roots.items():
+        self.layer_hashes = {}
+        for node in self.roots.values():
             self._build_layers(node)
 
     def _build_layers(self, node):
@@ -169,24 +157,82 @@ class DAG:
         if isinstance(node, Binary):
             layer = max(self._build_layers(node.lhs), self._build_layers(node.rhs)) + 1
 
-        if layer not in self.layers:
-            self.layers[layer] = set()
+        if layer not in self.layer_hashes:
+            self.layer_hashes[layer] = set()
 
-        self.layers[layer].add(node)
+        self.layer_hashes[layer].add(hash(node))
 
         return layer
 
     def eval(self, symbol_to_value):
         for key, value in symbol_to_value.items():
-            self.get_or_hash_node(Leaf(key)).value = value
+            node = self.get_or_hash_node(Leaf(key))
+            node.value = value
 
-        for i in range(1, len(self.layers)):
-            layer = self.layers[i]
-            for node in layer:
+        for i in range(1, len(self.layer_hashes)):
+            layer = self.layer_hashes[i]
+            for node_hash in layer:
+                node = self.hash_to_node[node_hash]
                 if node.OP == OP.ADD:
                     node.value = node.lhs.value + node.rhs.value
                 if node.OP == OP.MUL:
                     node.value = node.lhs.value * node.rhs.value
+
+    def apply_opt_passes(self):
+        while True:
+            last = sum(self.count_operations().values())
+            for name, node in self.roots.items():
+                self.roots[name] = self.opt_simplify_consts(node)
+            self.opt_dead_code_removal()
+            if sum(self.count_operations().values()) == last:
+                break
+            print(self.count_operations())
+            
+
+    def opt_simplify_consts(self, node):
+        if isinstance(node, Leaf):
+            return node
+
+        out = Binary(node.lhs, node.rhs, node.OP)
+
+        out.lhs = self.opt_simplify_consts(out.lhs)
+        out.rhs = self.opt_simplify_consts(out.rhs)
+
+        out = self.get_or_hash_node(out)
+
+        if node.OP == OP.ADD and node.lhs == self.get_or_hash_node(Leaf(0)):
+            return self.get_or_hash_node(node.rhs)
+        if node.OP == OP.ADD and node.rhs == self.get_or_hash_node(Leaf(0)):
+            return self.get_or_hash_node(node.lhs)
+
+        if node.OP == OP.MUL and node.lhs == self.get_or_hash_node(Leaf(0)):
+            return self.get_or_hash_node(Leaf(0))
+        if node.OP == OP.MUL and node.rhs == self.get_or_hash_node(Leaf(0)):
+            return self.get_or_hash_node(Leaf(0))
+
+        if node.OP == OP.MUL and node.lhs == self.get_or_hash_node(Leaf(1)):
+            return self.get_or_hash_node(node.rhs)
+        if node.OP == OP.MUL and node.rhs == self.get_or_hash_node(Leaf(1)):
+            return self.get_or_hash_node(node.lhs)
+
+        return out
+
+    def opt_dead_code_removal(self):
+        all_nodes = set(self.hash_to_node.values())
+        used_nodes = set()
+
+        to_visit = set(self.roots.values())
+        while to_visit:
+            curr = to_visit.pop()
+            used_nodes.add(curr)
+            if isinstance(curr, Leaf):
+                continue
+            to_visit.add(curr.lhs)
+            to_visit.add(curr.rhs)
+
+        for node in all_nodes.difference(used_nodes):
+            del self.hash_to_node[hash(node)]
+            # print(node)
 
 if __name__ == "__main__":
     sys.setrecursionlimit(10000)
@@ -244,14 +290,33 @@ if __name__ == "__main__":
         i = 0
         for name in [f"f_{i}" for i in range(len(eq))]:
             node = dag.roots[name]
-            dag.differentiate_node(node, dag.hash_to_node[sym], f"∂f_{i}/∂{sym}")
+            dag.differentiate_node(node, dag.hash_to_node[hash(Leaf(sym))], f"∂f_{i}/∂{sym}")
             i += 1
 
-    print()
-    dag.build_layers()
-    dag.eval(symbol_to_value=symbol_values)
-    for name, node in dag.roots.items():
-        print(name, node, node.value)
+    # for node in dag.hash_to_node.values():
+    #     print(node)
+
+    # print()
+    # dag.build_layers()
+    # dag.eval(symbol_to_value=symbol_values)
+    # for name, node in dag.roots.items():
+    #     print(name, node, node.value)
+    # print(dag.count_operations())
+
     print(dag.count_operations())
+    dag.apply_opt_passes()
+    print(dag.count_operations())
+    # for k, v in dag.hash_to_node.items():
+    #     print(k, v, hash(v))
 
+    # print()
+    # dag.build_layers()
+    # dag.eval(symbol_to_value=symbol_values)
+    # for name, node in dag.roots.items():
+    #     print(name, node, node.value)
+    # print(dag.count_operations())
 
+    # for k in dag.hash_to_node.values():
+    #     print(k)
+
+    # print(len(dag.hash_to_node.keys()), len(set(dag.hash_to_node.keys())))
