@@ -36,6 +36,9 @@ class Binary:
     def debug(self):
         return f"BIN_{self.count}({self.lhs.debug()} {self.OP} {self.rhs.debug()})"
 
+    def get_name(self):
+        return f"node_{self.count}"
+
     def __lt__(self, o):
         return self.__repr__() < o.__repr__()
 
@@ -61,6 +64,9 @@ class Leaf:
 
     def debug(self):
         return f"LEAF_{self.count}({self.symbol})"
+
+    def get_name(self):
+        return f"leaf_{self.count}"
 
     def __lt__(self, o):
         return self.__repr__() < o.__repr__()
@@ -187,6 +193,15 @@ class DAG:
             if sum(self.count_operations().values()) == last:
                 break
             print(self.count_operations())
+
+        while True:
+            last = sum(self.count_operations().values())
+            for name, node in self.roots.items():
+                self.roots[name] = self.opt_factorization(node)
+            self.opt_dead_code_removal()
+            if sum(self.count_operations().values()) == last:
+                break
+            print(self.count_operations())
             
 
     def opt_simplify_consts(self, node):
@@ -233,6 +248,128 @@ class DAG:
         for node in all_nodes.difference(used_nodes):
             del self.hash_to_node[hash(node)]
             # print(node)
+    
+    def opt_factorization(self, node):
+        if isinstance(node, Leaf):
+            return node
+
+        # only keep factorization candidates
+        if not (
+            node.OP == OP.ADD and 
+            isinstance(node.lhs, Binary) and
+            isinstance(node.rhs, Binary) and
+            node.lhs.OP == OP.MUL and 
+            node.rhs.OP == OP.MUL
+            ):
+            out = Binary(node.lhs, node.rhs, node.OP)
+            out.lhs = self.opt_factorization(out.lhs)
+            out.rhs = self.opt_factorization(out.rhs)
+            return self.get_or_hash_node(out)
+
+        # list parameters on each side
+        param_set_left = {}
+        param_set_right = {}
+
+        to_visit = [node.lhs]
+        while to_visit:
+            tmp = to_visit.pop()
+            if isinstance(tmp, Binary) and tmp.OP == OP.MUL:
+                to_visit.append(tmp.lhs)
+                to_visit.append(tmp.rhs)
+            else:
+                if tmp not in param_set_left.keys():
+                    param_set_left[tmp] = 0
+                param_set_left[tmp] += 1
+                continue
+
+        to_visit = [node.rhs]
+        while to_visit:
+            tmp = to_visit.pop()
+            if isinstance(tmp, Binary) and tmp.OP == OP.MUL:
+                to_visit.append(tmp.lhs)
+                to_visit.append(tmp.rhs)
+            else:
+                if tmp not in param_set_right.keys():
+                    param_set_right[tmp] = 0
+                param_set_right[tmp] += 1
+                continue
+
+        # print()
+        # print(node)
+        # print(param_set_left)
+        # print(param_set_right)
+
+        # intersection of both is a common factor
+        intersection = []
+        inter_set_no_dupl = set(param_set_left.keys()).intersection(set(param_set_right.keys()))
+        for param in inter_set_no_dupl:
+            min_count = min(param_set_left.get(param, 0), param_set_right.get(param, 0))
+            intersection.extend([param for _ in range(min_count)])
+        # print(intersection)
+        if not intersection:
+            return node
+
+        for param in intersection:
+            param_set_left[param] -= 1
+            param_set_right[param] -= 1
+
+        param_list_left = []
+        for param in param_set_left.keys():
+            param_list_left.extend([param for _ in range(param_set_left[param])])
+        param_list_right = []
+        for param in param_set_right.keys():
+            param_list_right.extend([param for _ in range(param_set_right[param])])
+        # print(param_list_left)
+        # print(param_list_right)
+
+        if not (param_list_left or param_list_right):
+            return node
+
+        # build the sum and the product again
+        node_sum_left = param_list_left.pop()
+        while param_list_left:
+            node_sum_left = self.get_or_hash_node(Binary(node_sum_left, param_list_left.pop(), OP.MUL))
+        node_sum_right = param_list_right.pop()
+        while param_list_right:
+            node_sum_right = self.get_or_hash_node(Binary(node_sum_right, param_list_right.pop(), OP.MUL))
+        node_prod = intersection.pop()
+        while intersection:
+            node_prod = self.get_or_hash_node(Binary(node_prod, intersection.pop(), OP.MUL))
+
+        out = self.get_or_hash_node(Binary(
+            node_prod,
+            self.get_or_hash_node(Binary(
+                node_sum_left,
+                node_sum_right,
+                OP.ADD
+            )),
+            OP.MUL
+        ))
+
+        # print(out)
+        return out
+
+    def export(self):
+        self.build_layers()
+        out = ""
+        for h, layer in self.layer_hashes.items():
+            for node_hash in layer:
+                node = self.hash_to_node[node_hash]
+                if isinstance(node, Leaf):
+                    out += f"double {node.get_name()} = {node.symbol};\n"
+                    continue
+
+                if node.OP == OP.ADD:
+                    out += f"double {node.get_name()} = {node.lhs.get_name()} + {node.rhs.get_name()};\n"
+                if node.OP == OP.MUL:
+                    out += f"double {node.get_name()} = {node.lhs.get_name()} * {node.rhs.get_name()};\n"
+            out += "\n"
+
+        for name, node in self.roots.items():
+            out += f"double {name} = {node.get_name()};\n"
+
+        return out
+
 
 if __name__ == "__main__":
     sys.setrecursionlimit(10000)
@@ -240,14 +377,14 @@ if __name__ == "__main__":
     p = 3
     s = 3
 
-    # p = 4
-    # s = 4
+    p = 4
+    s = 4
 
-    # p = 5
-    # s = 6
+    p = 5
+    s = 6
 
-    # p = 6
-    # s = 8
+    p = 6
+    s = 8
 
     # p = 7
     # s = 10
@@ -296,27 +433,38 @@ if __name__ == "__main__":
     # for node in dag.hash_to_node.values():
     #     print(node)
 
-    # print()
-    # dag.build_layers()
-    # dag.eval(symbol_to_value=symbol_values)
-    # for name, node in dag.roots.items():
-    #     print(name, node, node.value)
-    # print(dag.count_operations())
-
+    print()
+    dag.build_layers()
+    dag.eval(symbol_to_value=symbol_values)
+    res = []
+    for name, node in dag.roots.items():
+        res.append(node.value)
+        # print(name, node, node.value)
     print(dag.count_operations())
+
+    # print()
+    # print(dag.export())
+    print(dag.count_operations())
+    dag.build_layers()
     dag.apply_opt_passes()
     print(dag.count_operations())
     # for k, v in dag.hash_to_node.items():
     #     print(k, v, hash(v))
 
-    # print()
-    # dag.build_layers()
-    # dag.eval(symbol_to_value=symbol_values)
-    # for name, node in dag.roots.items():
-    #     print(name, node, node.value)
-    # print(dag.count_operations())
+    print()
+    dag.build_layers()
+    dag.eval(symbol_to_value=symbol_values)
+    res2 = []
+    for name, node in dag.roots.items():
+        res2.append(node.value)
+        # print(name, node, node.value)
+    print(dag.count_operations())
+
+    for i in range(len(res)):
+        assert(res[i] == res2[i])
 
     # for k in dag.hash_to_node.values():
     #     print(k)
 
-    # print(len(dag.hash_to_node.keys()), len(set(dag.hash_to_node.keys())))
+    # print()
+    # print(dag.export())
