@@ -105,22 +105,22 @@ def pattern_addition_permutation_candidate(node):
         isinstance(node.rhs.lhs, Binary) and
         isinstance(node.rhs.rhs, Binary) and ((
             node.lhs.OP == OP.ADD and
-            node.rhs.OP == OP.MUL and (
+            node.rhs.OP == OP.MUL and ((
                 node.lhs.lhs.OP == OP.ADD and
                 node.lhs.rhs.OP == OP.MUL
             ) or (
                 node.lhs.lhs.OP == OP.MUL and
                 node.lhs.rhs.OP == OP.ADD
-            )
+            ))
         ) or (
             node.lhs.OP == OP.MUL and
-            node.rhs.OP == OP.ADD and (
+            node.rhs.OP == OP.ADD and ((
                 node.rhs.lhs.OP == OP.ADD and
                 node.rhs.rhs.OP == OP.MUL
             ) or (
                 node.rhs.lhs.OP == OP.MUL and
                 node.rhs.rhs.OP == OP.ADD
-            )
+            ))
         ))
     )
 
@@ -241,6 +241,8 @@ class DAG:
         while True:
             last = sum(self.count_operations().values())
             for name, node in self.roots.items():
+                self.roots[name] = self.opt_random_add_permutation(node)
+            for name, node in self.roots.items():
                 self.roots[name] = self.opt_factorization(node)
             self.opt_dead_code_removal()
             if sum(self.count_operations().values()) == last:
@@ -307,8 +309,8 @@ class DAG:
         if not pattern_addition_permutation_candidate(out):
             return out
 
-        print()
-        print(node)
+        # print()
+        # print(out)
 
         if random.random() > 1:
             return out
@@ -332,35 +334,45 @@ class DAG:
                 mul2 = out.lhs.rhs
                 add2 = out.lhs.lhs
 
-        print(mul1)
-        print(mul2)
-        print(add1)
-        print(add2)
+        # print(mul1)
+        # print(mul2)
+        # print(add1)
+        # print(add2)
 
         out = self.get_or_hash_node(Binary(
-            Binary(
+            self.get_or_hash_node(Binary(
                 self.get_or_hash_node(mul1),
                 self.get_or_hash_node(mul2),
                 OP.ADD
-            ),
+            )),
             self.get_or_hash_node(add2),
             OP.ADD
         ))
 
-        print(out)
+        # print(out)
 
         return out
     
     def opt_factorization(self, node):
+        if isinstance(node, Leaf):
+            return node
+
+        out = Binary(node.lhs, node.rhs, node.OP)
+
+        out.lhs = self.opt_factorization(out.lhs)
+        out.rhs = self.opt_factorization(out.rhs)
+
+        out = self.get_or_hash_node(out)
+
         # only keep factorization candidates
         if not pattern_factorization_candidate(node):
-            return node
+            return out
 
         # list parameters on each side
         param_set_left = {}
         param_set_right = {}
 
-        to_visit = [node.lhs]
+        to_visit = [out.lhs]
         while to_visit:
             tmp = to_visit.pop()
             if isinstance(tmp, Binary) and tmp.OP == OP.MUL:
@@ -372,7 +384,7 @@ class DAG:
                 param_set_left[tmp] += 1
                 continue
 
-        to_visit = [node.rhs]
+        to_visit = [out.rhs]
         while to_visit:
             tmp = to_visit.pop()
             if isinstance(tmp, Binary) and tmp.OP == OP.MUL:
@@ -397,7 +409,7 @@ class DAG:
             intersection.extend([param for _ in range(min_count)])
         # print(intersection)
         if not intersection:
-            return node
+            return out 
 
         for param in intersection:
             param_set_left[param] -= 1
@@ -412,8 +424,8 @@ class DAG:
         # print(param_list_left)
         # print(param_list_right)
 
-        if not (param_list_left or param_list_right):
-            return node
+        if len(param_list_left) == 0 or len(param_list_right) == 0:
+            return out
 
         # build the sum and the product again
         node_sum_left = param_list_left.pop()
@@ -427,10 +439,10 @@ class DAG:
             node_prod = self.get_or_hash_node(Binary(node_prod, intersection.pop(), OP.MUL))
 
         out = self.get_or_hash_node(Binary(
-            node_prod,
+            self.get_or_hash_node(node_prod),
             self.get_or_hash_node(Binary(
-                node_sum_left,
-                node_sum_right,
+                self.get_or_hash_node(node_sum_left),
+                self.get_or_hash_node(node_sum_right),
                 OP.ADD
             )),
             OP.MUL
@@ -473,11 +485,11 @@ if __name__ == "__main__":
     p = 5
     s = 6
 
-    # p = 6
-    # s = 8
+    p = 6
+    s = 8
 
-    # p = 7
-    # s = 10
+    p = 7
+    s = 10
 
     eq = []
 
@@ -541,9 +553,6 @@ if __name__ == "__main__":
     # for k, v in dag.hash_to_node.items():
     #     print(k, v, hash(v))
 
-    for node in dag.roots.values():
-        dag.opt_random_add_permutation(node)
-
     print()
     dag.build_layers()
     dag.eval(symbol_to_value=symbol_values)
@@ -554,6 +563,7 @@ if __name__ == "__main__":
     print(dag.count_operations())
 
     for i in range(len(res)):
+        # print(f"{i}/{len(res)}", res[i], res2[i])
         assert(res[i] == res2[i])
 
     # for k in dag.hash_to_node.values():
