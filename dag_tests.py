@@ -6,6 +6,7 @@ import matplotlib.colors as colors
 from scipy.linalg import solve as lin_solve
 from scipy.optimize import least_squares
 import sys
+import random
 
 import pretty
 from treegen import Node, gen
@@ -28,6 +29,7 @@ class Binary:
         self.rhs = rhs
         self.OP = op
         self.count = inc()
+        self.hash = None
 
     def sort(self):
         if self.lhs > self.rhs:
@@ -49,7 +51,9 @@ class Binary:
             return f"{self.lhs} * {self.rhs}"
 
     def __hash__(self):
-        return hash(self.__repr__())
+        if self.hash is None:
+            self.hash = hash(self.__repr__())
+        return self.hash
 
     def __eq__(self, o):
         return self.__hash__() == o.__hash__()
@@ -79,6 +83,46 @@ class Leaf:
 
     def __eq__(self, o):
         return self.__hash__() == o.__hash__()
+
+def pattern_factorization_candidate(node):
+    return (
+        isinstance(node, Binary) and
+        node.OP == OP.ADD and 
+        isinstance(node.lhs, Binary) and
+        isinstance(node.rhs, Binary) and
+        node.lhs.OP == OP.MUL and 
+        node.rhs.OP == OP.MUL
+    )
+
+def pattern_addition_permutation_candidate(node):
+    return (
+        isinstance(node, Binary) and
+        node.OP == OP.ADD and 
+        isinstance(node.lhs, Binary) and 
+        isinstance(node.rhs, Binary) and 
+        isinstance(node.lhs.lhs, Binary) and
+        isinstance(node.lhs.rhs, Binary) and
+        isinstance(node.rhs.lhs, Binary) and
+        isinstance(node.rhs.rhs, Binary) and ((
+            node.lhs.OP == OP.ADD and
+            node.rhs.OP == OP.MUL and (
+                node.lhs.lhs.OP == OP.ADD and
+                node.lhs.rhs.OP == OP.MUL
+            ) or (
+                node.lhs.lhs.OP == OP.MUL and
+                node.lhs.rhs.OP == OP.ADD
+            )
+        ) or (
+            node.lhs.OP == OP.MUL and
+            node.rhs.OP == OP.ADD and (
+                node.rhs.lhs.OP == OP.ADD and
+                node.rhs.rhs.OP == OP.MUL
+            ) or (
+                node.rhs.lhs.OP == OP.MUL and
+                node.rhs.rhs.OP == OP.ADD
+            )
+        ))
+    )
 
 class DAG:
     def __init__(self):
@@ -248,23 +292,69 @@ class DAG:
         for node in all_nodes.difference(used_nodes):
             del self.hash_to_node[hash(node)]
             # print(node)
-    
-    def opt_factorization(self, node):
+        
+    def opt_random_add_permutation(self, node):
         if isinstance(node, Leaf):
             return node
 
+        out = Binary(node.lhs, node.rhs, node.OP)
+
+        out.lhs = self.opt_random_add_permutation(out.lhs)
+        out.rhs = self.opt_random_add_permutation(out.rhs)
+
+        out = self.get_or_hash_node(out)
+
+        if not pattern_addition_permutation_candidate(out):
+            return out
+
+        print()
+        print(node)
+
+        if random.random() > 1:
+            return out
+
+        if out.lhs.OP == OP.MUL:
+            mul1 = out.lhs
+            add1 = out.rhs
+            if out.rhs.lhs.OP == OP.MUL:
+                mul2 = out.rhs.lhs
+                add2 = out.rhs.rhs
+            else:
+                mul2 = out.rhs.rhs
+                add2 = out.rhs.lhs
+        else:
+            mul1 = out.rhs
+            add1 = out.lhs
+            if out.lhs.lhs.OP == OP.MUL:
+                mul2 = out.lhs.lhs
+                add2 = out.lhs.rhs
+            else:
+                mul2 = out.lhs.rhs
+                add2 = out.lhs.lhs
+
+        print(mul1)
+        print(mul2)
+        print(add1)
+        print(add2)
+
+        out = self.get_or_hash_node(Binary(
+            Binary(
+                self.get_or_hash_node(mul1),
+                self.get_or_hash_node(mul2),
+                OP.ADD
+            ),
+            self.get_or_hash_node(add2),
+            OP.ADD
+        ))
+
+        print(out)
+
+        return out
+    
+    def opt_factorization(self, node):
         # only keep factorization candidates
-        if not (
-            node.OP == OP.ADD and 
-            isinstance(node.lhs, Binary) and
-            isinstance(node.rhs, Binary) and
-            node.lhs.OP == OP.MUL and 
-            node.rhs.OP == OP.MUL
-            ):
-            out = Binary(node.lhs, node.rhs, node.OP)
-            out.lhs = self.opt_factorization(out.lhs)
-            out.rhs = self.opt_factorization(out.rhs)
-            return self.get_or_hash_node(out)
+        if not pattern_factorization_candidate(node):
+            return node
 
         # list parameters on each side
         param_set_left = {}
@@ -383,8 +473,8 @@ if __name__ == "__main__":
     p = 5
     s = 6
 
-    p = 6
-    s = 8
+    # p = 6
+    # s = 8
 
     # p = 7
     # s = 10
@@ -450,6 +540,9 @@ if __name__ == "__main__":
     print(dag.count_operations())
     # for k, v in dag.hash_to_node.items():
     #     print(k, v, hash(v))
+
+    for node in dag.roots.values():
+        dag.opt_random_add_permutation(node)
 
     print()
     dag.build_layers()
