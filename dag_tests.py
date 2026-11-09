@@ -7,6 +7,7 @@ from scipy.linalg import solve as lin_solve
 from scipy.optimize import least_squares
 import sys
 import random
+import graphviz
 
 import pretty
 from treegen import Node, gen
@@ -472,6 +473,35 @@ class DAG:
 
         return out
 
+    def viz(self):
+        dot = graphviz.Digraph("rk-dag")
+        dot = graphviz.Digraph("rk-dag", engine="fdp")
+        dot.format = "svg"
+
+        # with dot.subgraph() as s:
+        #     # s.attr(rank="same")
+        #     for name, node in self.roots.items():
+        #         s.node(name, name)
+        #         dot.edge(name, f"{hash(node)}")
+
+        for i in range(len(self.layer_hashes) - 1, -1, -1):
+            with dot.subgraph() as s:
+                # s.attr(rank="same")
+                for node_hash in self.layer_hashes[i]:
+                    node = self.hash_to_node[node_hash]
+                    if isinstance(node, Leaf):
+                        s.node(f"{node_hash}", f"{node.symbol}")
+                    else:
+                        s.node(f"{node_hash}", "*" if node.OP == OP.MUL else "+")
+
+        for node_hash, node in self.hash_to_node.items():
+            if not isinstance(node, Leaf):
+                dot.edge(f"{node_hash}", f"{hash(node.lhs)}")
+                dot.edge(f"{node_hash}", f"{hash(node.rhs)}")
+
+        dot.unflatten(stagger=4)
+        dot.render()
+
 
 if __name__ == "__main__":
     sys.setrecursionlimit(10000)
@@ -485,11 +515,11 @@ if __name__ == "__main__":
     p = 5
     s = 6
 
-    p = 6
-    s = 8
+    # p = 6
+    # s = 8
 
-    p = 7
-    s = 10
+    # p = 7
+    # s = 10
 
     eq = []
 
@@ -571,3 +601,4 @@ if __name__ == "__main__":
 
     # print()
     # print(dag.export())
+    dag.viz()
