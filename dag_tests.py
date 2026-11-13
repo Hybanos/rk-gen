@@ -262,20 +262,20 @@ class DAG:
 
         out = self.get_or_hash_node(out)
 
-        if node.OP == OP.ADD and node.lhs == self.get_or_hash_node(Leaf(0)):
-            return self.get_or_hash_node(node.rhs)
-        if node.OP == OP.ADD and node.rhs == self.get_or_hash_node(Leaf(0)):
-            return self.get_or_hash_node(node.lhs)
+        if out.OP == OP.ADD and out.lhs == self.get_or_hash_node(Leaf(0)):
+            return self.get_or_hash_node(out.rhs)
+        if out.OP == OP.ADD and out.rhs == self.get_or_hash_node(Leaf(0)):
+            return self.get_or_hash_node(out.lhs)
 
-        if node.OP == OP.MUL and node.lhs == self.get_or_hash_node(Leaf(0)):
+        if out.OP == OP.MUL and out.lhs == self.get_or_hash_node(Leaf(0)):
             return self.get_or_hash_node(Leaf(0))
-        if node.OP == OP.MUL and node.rhs == self.get_or_hash_node(Leaf(0)):
+        if out.OP == OP.MUL and out.rhs == self.get_or_hash_node(Leaf(0)):
             return self.get_or_hash_node(Leaf(0))
 
-        if node.OP == OP.MUL and node.lhs == self.get_or_hash_node(Leaf(1)):
-            return self.get_or_hash_node(node.rhs)
-        if node.OP == OP.MUL and node.rhs == self.get_or_hash_node(Leaf(1)):
-            return self.get_or_hash_node(node.lhs)
+        if out.OP == OP.MUL and out.lhs == self.get_or_hash_node(Leaf(1)):
+            return self.get_or_hash_node(out.rhs)
+        if out.OP == OP.MUL and out.rhs == self.get_or_hash_node(Leaf(1)):
+            return self.get_or_hash_node(out.lhs)
 
         return out
 
@@ -366,7 +366,7 @@ class DAG:
         out = self.get_or_hash_node(out)
 
         # only keep factorization candidates
-        if not pattern_factorization_candidate(node):
+        if not pattern_factorization_candidate(out):
             return out
 
         # list parameters on each side
@@ -515,11 +515,11 @@ if __name__ == "__main__":
     p = 5
     s = 6
 
-    # p = 6
-    # s = 8
+    p = 6
+    s = 8
 
-    # p = 7
-    # s = 10
+    p = 7
+    s = 10
 
     eq = []
 
@@ -601,4 +601,4 @@ if __name__ == "__main__":
 
     # print()
     # print(dag.export())
-    dag.viz()
+    # dag.viz()
