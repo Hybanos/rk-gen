@@ -10,21 +10,42 @@ from treegen import Node, gen
 from phi_t import Factor, Factors, label_tree, generate_factors
 from test_method import testall, Config, ODEs
 from tableau import Tableau, cache
+import simplifying_assumptions
 
-def generate_system(p, s):
+def generate_system(p, s, use_assumptions=False):
     equations = []
     symbols = set()
-    for i in range(1, p+1):
-        for t in gen(i):
-            pretty.add_tree(t)
-            label_tree(t)
-            factors = generate_factors(t)
-            lval = factors.sum(s) + f" - 1/{t.fact()}"
-            e = sympify(lval)
-            equations.append(e)
-            symbols.update(e.free_symbols)
+    trees = []
+    if use_assumptions:
+        trees = simplifying_assumptions.gen_c_trees(p)
+    else:
+        for i in range(1, p+1):
+            for t in gen(i):
+                trees.append(t.copy())
+    for t in trees: 
+        pretty.add_tree(t)
+        label_tree(t)
+        factors = generate_factors(t)
+        lval = factors.sum(s) + f" - 1/{t.fact()}"
+        e = sympify(lval)
+        equations.append(e)
+        symbols.update(e.free_symbols)
 
     symbols = list(symbols)
+
+    # add obious condition: c_i = \sum_j a_ij
+    for i in range(s-1):
+        eq = []
+        for j in range(i+1):
+            eq.append(f"a_{i+2}{j+1}")
+            sym = f"a_{i+2}{j+1}"
+            if sym not in map(str, symbols):
+                symbols.append(sympify(sym))
+        equations.append(sympify(" + ".join(eq) + f" - c_{i+2}"))
+
+    if use_assumptions:
+        equations.extend(simplifying_assumptions.gen_c_conditions(p, s))
+
     symbols.sort(key=lambda x: str(x))
     return symbols, equations
 
@@ -112,21 +133,9 @@ def newton(symbols, equations, s, config, guesses=500, cap=5000, max_steps=100):
     
     return tableaux 
 
-def LM(s):
-    symbols, equations = generate_system(s)
-    pretty.add_system(symbols, equations)
-
-    # add obious condition: c_i = \sum_j a_ij
-    for i in range(s-1):
-        eq = []
-        for j in range(i+1):
-            eq.append(f"a_{i+2}{j+1}")
-            sym = f"a_{i+2}{j+1}"
-            if sym not in map(str, symbols):
-                symbols.append(sympify(sym))
-        equations.append(sympify(" + ".join(eq) + f" - c_{i+2}"))
-    
-    symbols.sort(key=lambda x: str(x))
+def LM(symbols, equations, x0=None):
+    # symbols, equations = generate_system(p, s)
+    # pretty.add_system(symbols, equations)
 
     # Jacobian
     jacobian_matrix = []
@@ -136,21 +145,23 @@ def LM(s):
             tmp.append(diff(equations[i], symbols[j]))
         jacobian_matrix.append(tmp)
 
-    print(equations)
+    print(*equations, sep="\n")
+    print(symbols)
     print(*jacobian_matrix, sep="\n", end="\n\n")
 
     # lambify
     lb_equations = lambdify(symbols, equations)
     lb_jacobi = lambdify(symbols, jacobian_matrix)
 
-    x0 = np.random.rand(len(symbols))
-    x0 = [  0.46892478,  0.14261526,  0.0867623, -13.86722129,  0.44678603,
-    14.03909785 ,  0.72350357 ,  0.4697013 ,  -0.34536401,   0.0140855,
-    0.35709955  , 0.35067554  ,-0.49332022 ,  0.06186231 ,  0.50510435,
-    -1.64459387 ,  0.72215016 , 1.10114275,   0.0172103 ,   0.40561722,
-    0.38734762  , 0.09459662  , 0.34114574 ,  0.2238359  ,  0.01787722,
-    0.24796481  , 0.04744269  , 0.02713702 ,  0.46892478 ,  0.22937756,
-    0.61866259  , 0.86192636  , 0.78142153 ,  0.98887419]
+    if x0 is None:
+        x0 = np.random.rand(len(symbols))
+    # x0 = [  0.46892478,  0.14261526,  0.0867623, -13.86722129,  0.44678603,
+    # 14.03909785 ,  0.72350357 ,  0.4697013 ,  -0.34536401,   0.0140855,
+    # 0.35709955  , 0.35067554  ,-0.49332022 ,  0.06186231 ,  0.50510435,
+    # -1.64459387 ,  0.72215016 , 1.10114275,   0.0172103 ,   0.40561722,
+    # 0.38734762  , 0.09459662  , 0.34114574 ,  0.2238359  ,  0.01787722,
+    # 0.24796481  , 0.04744269  , 0.02713702 ,  0.46892478 ,  0.22937756,
+    # 0.61866259  , 0.86192636  , 0.78142153 ,  0.98887419]
     print("init: ", x0)
     result = least_squares(lambda x: lb_equations(*x), x0, jac="3-point", method="trf", x_scale="jac", max_nfev=10000, ftol=1e-15, xtol=1e-15, gtol=1e-15, verbose=2)
     print("status: ", result.status)
@@ -161,6 +172,8 @@ def LM(s):
     # print("optimality value: " , np.array(lb_jacobi(*result.x)).T @ np.array(lb_equations(*result.x)))
     print("optimality value: " , result.optimality)
     print("idk: ", np.linalg.svd(lb_jacobi(*result.x), compute_uv=False))
+
+    return result
 
 def gen_tableaux(symbols, equations, s, config):
     missing = len(symbols) - len(equations)
@@ -315,6 +328,28 @@ def drift(tableaux, config):
     plt.clf()
 
 if __name__ == "__main__":
+
+    p = 3
+    s = 3
+
+    p = 4
+    s = 4
+
+    p = 5
+    s = 6
+
+    # p = 6
+    # s = 8
+
+    # p = 7
+    # s = 10
+
+    # result = LM(*generate_system(p, s, True))
+    # result = LM(*generate_system(p, s), result.x)
+    s, e = generate_system(4, 4)
+    print(*e, sep="\n")
+    exit()
+
     p = 3
     s = 4
     symbols, equations = generate_system(p, s)

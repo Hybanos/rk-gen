@@ -43,9 +43,18 @@ class Node:
     
     def __lt__(self, other):
         return self.id() < other.id()
+
+    def __eq__(self, other):
+        return self.id() == other.id()
     
     def __hash__(self):
         return hash(self.id())
+
+    def copy(self):
+        new = Node()
+        for node in self.children:
+            new.children.append(node.copy())
+        return new
 
 def from_text(text):
     if not len(text):
@@ -89,7 +98,7 @@ def gen(nodes):
 
     root = Node()
     for t in _gen(root, nodes-1):
-        if t not in s:
+        if t not in s and t.order() == nodes:
             yield t
             s.add(t)
 

@@ -3,6 +3,7 @@
 *.json
 *.txt
 *.png
+*.gv
 out/
 out.typ
 __pycache__/

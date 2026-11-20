@@ -475,14 +475,15 @@ class DAG:
 
     def viz(self):
         dot = graphviz.Digraph("rk-dag")
-        dot = graphviz.Digraph("rk-dag", engine="fdp")
+        # dot = graphviz.Digraph("rk-dag", engine="sfdp")
+        # dot = graphviz.Digraph("rk-dag", engine="twopi")
         dot.format = "svg"
 
-        # with dot.subgraph() as s:
-        #     # s.attr(rank="same")
-        #     for name, node in self.roots.items():
-        #         s.node(name, name)
-        #         dot.edge(name, f"{hash(node)}")
+        with dot.subgraph() as s:
+            # s.attr(rank="same")
+            for name, node in self.roots.items():
+                s.node(name, name)
+                dot.edge(name, f"{hash(node)}")
 
         for i in range(len(self.layer_hashes) - 1, -1, -1):
             with dot.subgraph() as s:
@@ -499,7 +500,8 @@ class DAG:
                 dot.edge(f"{node_hash}", f"{hash(node.lhs)}")
                 dot.edge(f"{node_hash}", f"{hash(node.rhs)}")
 
-        dot.unflatten(stagger=4)
+        # dot.unflatten(stagger=4)
+        # dot.attr("graph", repulsiveforce="0")
         dot.render()
 
 
@@ -512,14 +514,14 @@ if __name__ == "__main__":
     p = 4
     s = 4
 
-    p = 5
-    s = 6
+    # p = 5
+    # s = 6
 
-    p = 6
-    s = 8
+    # p = 6
+    # s = 8
 
-    p = 7
-    s = 10
+    # p = 7
+    # s = 10
 
     eq = []
 
@@ -599,6 +601,6 @@ if __name__ == "__main__":
     # for k in dag.hash_to_node.values():
     #     print(k)
 
-    # print()
-    # print(dag.export())
-    # dag.viz()
+    print()
+    print(dag.export())
+    dag.viz()
