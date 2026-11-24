@@ -8,6 +8,7 @@ from scipy.optimize import least_squares
 import sys
 import random
 import graphviz
+import json
 
 import pretty
 from treegen import Node, gen
@@ -502,8 +503,30 @@ class DAG:
 
         # dot.unflatten(stagger=4)
         # dot.attr("graph", repulsiveforce="0")
-        dot.render()
+        # dot.render()
+        dot.save()
 
+    def to_js(self):
+        nodes = []
+        edges = []
+
+        for h, node in self.hash_to_node.items():
+            if isinstance(node, Binary):
+                nodes.append([h, "*" if node.OP == OP.MUL else "+"])
+                edges.append([h, hash(node.lhs)])
+                edges.append([h, hash(node.rhs)])
+            else:
+                nodes.append([h, str(node)])
+
+        _json = {
+            "nodes": nodes,
+            "edges": edges
+        }
+
+        with open("visu/out.js", "w") as f:
+            f.write("dataset = JSON.parse('")
+            f.write(json.dumps(_json))
+            f.write("')")
 
 if __name__ == "__main__":
     sys.setrecursionlimit(10000)
@@ -511,8 +534,8 @@ if __name__ == "__main__":
     p = 3
     s = 3
 
-    p = 4
-    s = 4
+    # p = 4
+    # s = 4
 
     # p = 5
     # s = 6
@@ -603,4 +626,5 @@ if __name__ == "__main__":
 
     print()
     print(dag.export())
-    dag.viz()
+    # dag.viz()
+    dag.to_js()

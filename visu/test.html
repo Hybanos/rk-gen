@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Quick Sigma.js Example</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sigma.js/4.0.6/sigma.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/graphology/0.26.0/graphology.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/graphology-library/dist/graphology-library.min.js"></script>
+</head>
+<body style="background: lightgrey">
+  <div id="container" style="width: 800px; height: 600px; background: white"></div>
+<script src="out.js"></script>
+  <script>
+    const graph = new graphology.Graph();
+
+    for (const node of dataset.nodes) {
+      graph.addNode(node[0], {
+        label: node[1],
+        size: 2,
+        x: Math.random() * 100,
+        y: Math.random() * 100
+      });
+    }
+
+    for (const [source, target] of dataset.edges) {
+      if (graph.hasNode(source) && graph.hasNode(target) && !graph.hasEdge(source, target)) {
+        graph.addEdge(source, target);
+      }
+    }
+
+    const positions = graphologyLibrary.layoutForceAtlas2.inferSettings(graph);
+    graphologyLibrary.layoutForceAtlas2.assign(
+      graph,
+      {
+        iterations: 100,
+        settings: positions
+      }
+    );
+
+    // Render
+    const renderer = new Sigma(graph, document.getElementById("container"), {
+      settings: {
+        autoRescale: "once", 
+        enableNodeDrag: true,
+      },
+      styles: {
+        nodes: [
+          {
+            label: {attribute: "label"},
+            labelPosition: "over",
+          },
+          {
+            x: {attribute: "x"},
+            y: {attribute: "y"},
+          }
+        ]
+      }
+    });
+  </script>
+
+</body>
+</html>
