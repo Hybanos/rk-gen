@@ -15,6 +15,14 @@ from phi_t import Factor, Factors, label_tree, generate_factors
 from test_method import testall, Config, ODEs
 from tableau import Tableau, cache
 
+def gen_b_trees(p):
+    trees = [Node()]
+    root = Node()
+    for i in range(1, p):
+        root.children.append(Node()) 
+        trees.append(root.copy())
+    return trees
+
 def match_c_assumption(t1, t2):
     base_facts = [t1.fact(), t2.fact()]
     base_facts.sort()

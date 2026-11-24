@@ -1,4 +1,4 @@
-from sympy import sympify, solve, lambdify, diff
+from sympy import sympify, solve, lambdify, diff, polys
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors 
@@ -330,13 +330,13 @@ def drift(tableaux, config):
 if __name__ == "__main__":
 
     p = 3
-    s = 3
+    s = 5
 
     p = 4
     s = 4
 
-    p = 5
-    s = 6
+    # p = 5
+    # s = 6
 
     # p = 6
     # s = 8
@@ -344,10 +344,13 @@ if __name__ == "__main__":
     # p = 7
     # s = 10
 
-    # result = LM(*generate_system(p, s, True))
-    # result = LM(*generate_system(p, s), result.x)
-    s, e = generate_system(4, 4)
-    print(*e, sep="\n")
+    symbols, equations = generate_system(p, s)
+    x0 = np.random.rand(len(symbols))
+
+    result = LM(symbols, equations, x0)
+    result = LM(symbols, list(polys.groebner(equations, order="lex")), x0)
+    # s, e = generate_system(4, 4)
+    # print(*e, sep="\n")
     exit()
 
     p = 3
